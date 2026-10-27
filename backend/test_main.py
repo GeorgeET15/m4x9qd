@@ -22,9 +22,24 @@ class AskAssistantTests(unittest.TestCase):
         self.payload = {
             "question": "What is the forecast bias?",
             "context": {
-                "metrics": {"bias": 125.0},
-                "shortfalls": [],
-                "chart_data_summary": {"matched_periods": 744},
+                "metrics": {
+                    "mae": 1839.920698,
+                    "bias": 125.0,
+                    "matched_coverage": {"matched": 744, "expected": 1488},
+                },
+                "shortfalls": [
+                    {
+                        "delivery_time": "2026-01-08T19:00:00Z",
+                        "forecast_publish_time": "2026-01-07T11:00:00Z",
+                        "outturn": 9880,
+                        "forecast": 5913,
+                        "gap": 3967,
+                    },
+                ],
+                "chart_data_summary": {
+                    "matched_periods": 744,
+                    "actual_generation_mw": {"mean_mw": 1839.920698},
+                },
             },
         }
 
@@ -55,14 +70,23 @@ class AskAssistantTests(unittest.TestCase):
         kwargs = generate_content.await_args.kwargs
         self.assertEqual(kwargs["model"], GEMINI_MODEL)
         self.assertIn(self.payload["question"], kwargs["contents"])
-        self.assertIn('"bias":125.0', kwargs["contents"])
+        self.assertIn('"mae":1839.9', kwargs["contents"])
+        self.assertIn('"mean_mw":1839.9', kwargs["contents"])
+        self.assertNotIn("1839.920698", kwargs["contents"])
+        self.assertIn(
+            "Jan 08 19:00 UK: Actual 9,880 MW, Forecast 5,913 MW, Gap +3,967 MW",
+            kwargs["contents"],
+        )
+        self.assertIn("forecast published Jan 07 11:00 UK", kwargs["contents"])
         self.assertEqual(
             kwargs["config"].system_instruction,
             ASSISTANT_SYSTEM_PROMPT,
         )
+        self.assertIn("CRITICAL DOMAIN KNOWLEDGE", kwargs["config"].system_instruction)
+        self.assertIn("Query outside current dashboard context.", kwargs["config"].system_instruction)
         close.assert_awaited_once()
 
-    def test_gemini_api_error_returns_bad_gateway(self):
+    def test_gemini_api_error_returns_structured_retry_message(self):
         generate_content = AsyncMock(
             side_effect=APIError(500, {"message": "provider failure"})
         )
@@ -80,7 +104,32 @@ class AskAssistantTests(unittest.TestCase):
             response = self.client.post("/api/ask-assistant", json=self.payload)
 
         self.assertEqual(response.status_code, 502)
-        self.assertIn("request failed", response.json()["detail"])
+        self.assertEqual(
+            response.json(),
+            {"response": "Error: Unable to reach data model. Please try again."},
+        )
+        close.assert_awaited_once()
+
+    def test_gemini_timeout_returns_structured_retry_message(self):
+        generate_content = AsyncMock(side_effect=TimeoutError())
+        close = AsyncMock()
+        fake_client = SimpleNamespace(
+            aio=SimpleNamespace(
+                models=SimpleNamespace(generate_content=generate_content),
+                aclose=close,
+            )
+        )
+        with (
+            patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}),
+            patch("main.genai.Client", return_value=fake_client),
+        ):
+            response = self.client.post("/api/ask-assistant", json=self.payload)
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(
+            response.json(),
+            {"response": "Error: Unable to reach data model. Please try again."},
+        )
         close.assert_awaited_once()
 
     def test_invalid_request_payload_is_rejected(self):

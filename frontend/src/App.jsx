@@ -300,6 +300,7 @@ function App() {
       )
     } catch (requestError) {
       const message =
+        requestError.response?.data?.response ||
         requestError.response?.data?.detail ||
         requestError.message ||
         'Assistant request failed. Try again.'
