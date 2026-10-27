@@ -138,15 +138,6 @@ function ExternalLinkIcon() {
   )
 }
 
-function AssistantIcon() {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M3.5 4.5h13v9h-7l-4 3v-3h-2z" />
-      <path d="M7 8h6M7 10.5h4" />
-    </svg>
-  )
-}
-
 function CloseIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -598,7 +589,6 @@ function App() {
             <span className="brand-context">Day-ahead wind desk</span>
           </div>
           <div className="topbar-right">
-            <span className="topbar-source">Elexon BMRS</span>
             <button
               className="icon-button"
               onClick={refreshAnalysis}
@@ -620,7 +610,7 @@ function App() {
               type="button"
             >
               <span className="assistant-icon">
-                <AssistantIcon />
+                <AssistantSparkleIcon />
               </span>
               Assistant
             </button>
