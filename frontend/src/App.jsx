@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import {
   Line,
@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api/wind-analysis'
+const ASSISTANT_API_URL = '/api/ask-assistant'
 const START_DATE = '2026-01-01'
 const END_DATE = '2026-01-31'
 const UK_TIMEZONE = 'Europe/London'
@@ -36,6 +37,29 @@ function formatUKTime(value, options = {}) {
     timeZone: UK_TIMEZONE,
     ...options,
   })
+}
+
+function summarizeChartData(data) {
+  const summarizeSeries = (key) => {
+    const values = data.map((point) => point[key]).filter(Number.isFinite)
+    if (!values.length) {
+      return { mean_mw: null, min_mw: null, max_mw: null }
+    }
+
+    return {
+      mean_mw: values.reduce((sum, value) => sum + value, 0) / values.length,
+      min_mw: Math.min(...values),
+      max_mw: Math.max(...values),
+    }
+  }
+
+  return {
+    matched_periods: data.length,
+    delivery_start: data[0]?.startTime ?? null,
+    delivery_end: data.at(-1)?.startTime ?? null,
+    actual_generation_mw: summarizeSeries('actual_generation'),
+    forecast_generation_mw: summarizeSeries('forecast_generation'),
+  }
 }
 
 function validateAnalysisPayload(data) {
@@ -99,6 +123,31 @@ function ExternalLinkIcon() {
   )
 }
 
+function AssistantIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M3.5 4.5h13v9h-7l-4 3v-3h-2z" />
+      <path d="M7 8h6M7 10.5h4" />
+    </svg>
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="m5 5 10 10M15 5 5 15" />
+    </svg>
+  )
+}
+
+function SubmitIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M3.5 10h12M10 4.5l5.5 5.5-5.5 5.5" />
+    </svg>
+  )
+}
+
 function ForecastTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
 
@@ -142,6 +191,12 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
+  const [assistantOpen, setAssistantOpen] = useState(false)
+  const [assistantQuestion, setAssistantQuestion] = useState('')
+  const [assistantMessages, setAssistantMessages] = useState([])
+  const [assistantLoading, setAssistantLoading] = useState(false)
+  const assistantTriggerRef = useRef(null)
+  const assistantInputRef = useRef(null)
 
   const fetchAnalysis = useCallback(async () => {
     const response = await axios.get(API_URL, {
@@ -187,9 +242,75 @@ function App() {
     }
   }, [applyAnalysis, fetchAnalysis])
 
+  useEffect(() => {
+    if (!assistantOpen) return undefined
+
+    assistantInputRef.current?.focus()
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setAssistantOpen(false)
+        assistantTriggerRef.current?.focus()
+      }
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [assistantOpen])
+
+  useEffect(() => {
+    const log = document.querySelector('.assistant-log')
+    if (log) log.scrollTop = log.scrollHeight
+  }, [assistantMessages, assistantLoading, assistantOpen])
+
   const refreshAnalysis = () => {
     setLoading(true)
     loadAnalysis()
+  }
+
+  const submitAssistantQuestion = async (event) => {
+    event.preventDefault()
+    const question = assistantQuestion.trim()
+    if (!question || !metrics || assistantLoading) return
+
+    const messageId = `${Date.now()}-${assistantMessages.length}`
+    setAssistantMessages((messages) => [
+      ...messages,
+      { id: messageId, question, answer: null, error: null },
+    ])
+    setAssistantQuestion('')
+    setAssistantLoading(true)
+
+    try {
+      const response = await axios.post(ASSISTANT_API_URL, {
+        question,
+        context: {
+          metrics,
+          shortfalls,
+          chart_data_summary: summarizeChartData(chartData),
+        },
+      })
+      if (typeof response.data?.answer !== 'string' || !response.data.answer.trim()) {
+        throw new Error('The assistant returned an empty response.')
+      }
+      setAssistantMessages((messages) =>
+        messages.map((message) =>
+          message.id === messageId
+            ? { ...message, answer: response.data.answer.trim() }
+            : message,
+        ),
+      )
+    } catch (requestError) {
+      const message =
+        requestError.response?.data?.detail ||
+        requestError.message ||
+        'Assistant request failed. Try again.'
+      setAssistantMessages((messages) =>
+        messages.map((item) =>
+          item.id === messageId ? { ...item, error: message } : item,
+        ),
+      )
+    } finally {
+      setAssistantLoading(false)
+    }
   }
 
   const matched = metrics?.matched_coverage?.matched
@@ -228,6 +349,19 @@ function App() {
                 <RefreshIcon />
               </span>
               {loading ? 'Updating' : 'Refresh data'}
+            </button>
+            <button
+              ref={assistantTriggerRef}
+              className="refresh-button assistant-trigger"
+              onClick={() => setAssistantOpen(true)}
+              aria-controls="assistant-panel"
+              aria-expanded={assistantOpen}
+              type="button"
+            >
+              <span className="assistant-icon">
+                <AssistantIcon />
+              </span>
+              Ask Assistant
             </button>
           </div>
         </header>
@@ -498,6 +632,95 @@ function App() {
           </span>
         </footer>
       </div>
+      {assistantOpen && (
+        <aside
+          id="assistant-panel"
+          className="assistant-panel"
+          aria-label="Dashboard assistant"
+        >
+          <header className="assistant-header">
+            <div>
+              <h2>Dashboard assistant</h2>
+              <p>Current dashboard data · January 2026</p>
+            </div>
+            <button
+              className="assistant-close"
+              onClick={() => {
+                setAssistantOpen(false)
+                assistantTriggerRef.current?.focus()
+              }}
+              type="button"
+              aria-label="Close assistant"
+            >
+              <CloseIcon />
+            </button>
+          </header>
+
+          <div className="assistant-log" role="log" aria-live="polite">
+            {assistantMessages.length === 0 ? (
+              <p className="assistant-empty">
+                Ask about the metrics, matched periods, or listed shortfalls.
+                Answers are limited to the data currently shown on the
+                dashboard.
+              </p>
+            ) : (
+              assistantMessages.map((message) => (
+                <article className="assistant-entry" key={message.id}>
+                  <div className="assistant-query">
+                    <span aria-hidden="true">&gt;</span>
+                    <p>{message.question}</p>
+                  </div>
+                  {message.answer && (
+                    <p className="assistant-answer">{message.answer}</p>
+                  )}
+                  {message.error && (
+                    <p className="assistant-error" role="alert">
+                      Request failed: {message.error}
+                    </p>
+                  )}
+                </article>
+              ))
+            )}
+            {assistantLoading && (
+              <p className="assistant-loading" role="status">
+                <span aria-hidden="true" />
+                Querying data model...
+              </p>
+            )}
+          </div>
+
+          <form className="assistant-form" onSubmit={submitAssistantQuestion}>
+            <label className="assistant-input-label" htmlFor="assistant-question">
+              Ask about this dashboard
+            </label>
+            <div className="assistant-input-row">
+              <input
+                ref={assistantInputRef}
+                id="assistant-question"
+                type="text"
+                value={assistantQuestion}
+                onChange={(event) => setAssistantQuestion(event.target.value)}
+                placeholder={
+                  metrics ? 'Enter a data question...' : 'Waiting for dashboard data...'
+                }
+                maxLength={2000}
+                disabled={!metrics || assistantLoading}
+              />
+              <button
+                type="submit"
+                className="assistant-submit"
+                aria-label="Send question"
+                disabled={!metrics || assistantLoading || !assistantQuestion.trim()}
+              >
+                <SubmitIcon />
+              </button>
+            </div>
+            <p className="assistant-disclaimer">
+              Responses use only the metrics and chart data shown here.
+            </p>
+          </form>
+        </aside>
+      )}
     </main>
   )
 }

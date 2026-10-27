@@ -13,6 +13,7 @@ The app is an analysis aid, not a dispatch or trading recommendation. It uses on
 - **Bias**: mean forecast minus actual in MW; positive values mean over-forecasting.
 - **Matched coverage**: the number of actual intervals with an eligible, exactly timestamp-matched forecast divided by valid actual intervals.
 - A time-series comparison and the five largest positive actual-minus-forecast periods. Each point in the watchlist includes the publication time of the forecast used for that delivery period.
+- A technical-log-style assistant sidebar for asking questions about the currently displayed metrics, shortfalls, and a summary of the chart data.
 
 The selection rule is explicit: for each delivery `startTime`, select the latest forecast `publishTime` at or before **11:00 Europe/London on the previous calendar day**. This cutoff is an assumption for the pilot and should be confirmed with the client's actual market/desk decision deadline before operational use. The backend uses UK calendar days and timezone rules, including daylight-saving changes. It does not interpolate, fill, or aggregate mismatched intervals; coverage shows the impact of missing overlaps.
 
