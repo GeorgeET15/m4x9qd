@@ -253,28 +253,28 @@ function App() {
                 label="Mean absolute error"
                 value={formatMetric(metrics?.mae)}
                 unit="MW"
-                detail="Typical absolute miss per matched period"
+                detail="Average distance from the realised output"
                 accent="green"
               />
               <MetricCard
                 label="Mean absolute % error"
                 value={formatMetric(metrics?.mape)}
                 unit="%"
-                detail={`${formatNumber(metadata?.mape_sample_count)} non-zero actual periods`}
+                detail={`Across ${formatNumber(metadata?.mape_sample_count)} non-zero intervals`}
                 accent="blue"
               />
               <MetricCard
                 label="Forecast bias"
                 value={formatMetric(metrics?.bias)}
                 unit="MW"
-                detail="Forecast − actual · positive means over-forecast"
+                detail="Forecast minus actual · positive means long"
                 accent="amber"
               />
               <MetricCard
                 label="Matched coverage"
                 value={coverage}
                 unit=""
-                detail={`${formatMetric(metadata?.coverage_pct)}% of actual periods`}
+                detail={`${formatMetric(metadata?.coverage_pct)}% exact timestamp matches`}
                 accent="violet"
               />
             </section>
@@ -283,10 +283,10 @@ function App() {
               <article className="panel chart-panel">
                 <div className="panel-heading">
                   <div>
-                    <p className="section-kicker">FORECAST PERFORMANCE</p>
+                    <p className="section-kicker">THE MONTH, IN MEGAWATTS</p>
                     <h2>Forecast vs. outturn</h2>
                     <p className="panel-description">
-                      National wind generation by delivery time · MW
+                      Elexon national wind · each eligible delivery interval
                     </p>
                   </div>
                   <span className="unit-tag">JAN ’26</span>
@@ -302,8 +302,8 @@ function App() {
                         margin={{ top: 14, right: 12, bottom: 4, left: 0 }}
                       >
                         <CartesianGrid
-                          stroke="#e9eef0"
-                          strokeDasharray="3 5"
+                          stroke="#e8eeea"
+                          strokeDasharray="2 6"
                           vertical={false}
                         />
                         <XAxis
@@ -313,14 +313,14 @@ function App() {
                           tickFormatter={(value) =>
                             formatUKTime(value, { day: '2-digit', month: 'short' })
                           }
-                          tick={{ fill: '#829098', fontSize: 11 }}
+                          tick={{ fill: '#75827c', fontSize: 10 }}
                           tickLine={false}
-                          axisLine={{ stroke: '#dce4e6' }}
+                          axisLine={{ stroke: '#dce5df' }}
                         />
                         <YAxis
                           width={58}
                           tickFormatter={formatNumber}
-                          tick={{ fill: '#829098', fontSize: 11 }}
+                          tick={{ fill: '#75827c', fontSize: 10 }}
                           tickLine={false}
                           axisLine={false}
                         />
@@ -340,20 +340,20 @@ function App() {
                           type="monotone"
                           dataKey="actual_generation"
                           name="Actual"
-                          stroke="#16836e"
-                          strokeWidth={2}
+                          stroke="#1b7a59"
+                          strokeWidth={2.5}
                           dot={false}
-                          activeDot={{ r: 4, fill: '#16836e', stroke: '#fff', strokeWidth: 2 }}
+                          activeDot={{ r: 4, fill: '#1b7a59', stroke: '#fff', strokeWidth: 2 }}
                         />
                         <Line
                           type="monotone"
                           dataKey="forecast_generation"
                           name="Day-ahead forecast"
-                          stroke="#5688c7"
-                          strokeWidth={2}
-                          strokeDasharray="5 4"
+                          stroke="#7383ae"
+                          strokeWidth={2.25}
+                          strokeDasharray="4 5"
                           dot={false}
-                          activeDot={{ r: 4, fill: '#5688c7', stroke: '#fff', strokeWidth: 2 }}
+                          activeDot={{ r: 4, fill: '#7383ae', stroke: '#fff', strokeWidth: 2 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -385,10 +385,10 @@ function App() {
               <article className="panel watchlist-panel">
                 <div className="panel-heading">
                   <div>
-                    <p className="section-kicker">PROCUREMENT WATCHLIST</p>
-                    <h2>Largest wind shortfalls</h2>
+                    <p className="section-kicker">VOLUME RISK SIGNAL</p>
+                    <h2>Where wind fell short</h2>
                     <p className="panel-description">
-                      Periods where outturn exceeded the forecast
+                      Biggest positive outturn-minus-forecast gaps
                     </p>
                   </div>
                   <span className="watchlist-icon" aria-hidden="true">
@@ -458,11 +458,11 @@ function App() {
               <div>
                 <strong>Decision-time method</strong>
                 <p>
-                  For each delivery interval, the analysis selects the latest
-                  WINDFOR issue published by the assumed{' '}
-                  <b>11:00 UK D-1 cutoff</b>. Accuracy is scored only where a
-                  selected forecast overlaps a WIND FUELHH actual. MAPE omits
-                  zero-actual periods; coverage makes unmatched periods visible.
+                  For each delivery interval, we select the latest WINDFOR issue
+                  published before the assumed <b>11:00 UK D-1 cutoff</b>.
+                  Elexon forecasts are hourly while FUELHH actuals are
+                  half-hourly, so this pilot scores exact timestamp overlaps
+                  only—no interpolation. MAPE excludes zero-actual periods.
                 </p>
               </div>
               <a
