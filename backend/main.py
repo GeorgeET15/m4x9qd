@@ -113,6 +113,14 @@ def analyse_wind(actual_records, forecast_records, start_date, end_date):
     nonzero = merged["generation_actual"] != 0
     latest_publish_time = merged["publishTime_forecast"].max()
     coverage_pct = len(merged) / actual_point_count * 100 if actual_point_count else 0
+    expected_period_count = ((end_date - start_date).days + 1) * 48
+    shortfalls = merged.loc[
+        merged["generation_actual"] > merged["generation_forecast"]
+    ].copy()
+    shortfalls["gap"] = (
+        shortfalls["generation_actual"] - shortfalls["generation_forecast"]
+    )
+    shortfalls = shortfalls.sort_values("gap", ascending=False).head(5)
     return {
         "metrics": {
             "mae": float(error.mean()),
@@ -120,6 +128,10 @@ def analyse_wind(actual_records, forecast_records, start_date, end_date):
             if nonzero.any()
             else 0.0,
             "bias": float((merged["generation_forecast"] - merged["generation_actual"]).mean()),
+            "matched_coverage": {
+                "matched": len(merged),
+                "expected": expected_period_count,
+            },
         },
         "metadata": {
             "start_date": start_date.isoformat(),
@@ -127,6 +139,7 @@ def analyse_wind(actual_records, forecast_records, start_date, end_date):
             "decision_cutoff": "11:00 Europe/London on D-1",
             "actual_points": actual_point_count,
             "matched_points": len(merged),
+            "expected_points": expected_period_count,
             "coverage_pct": coverage_pct,
             "mape_sample_count": int(nonzero.sum()),
             "latest_forecast_publish_time": latest_publish_time.isoformat().replace("+00:00", "Z"),
@@ -139,6 +152,16 @@ def analyse_wind(actual_records, forecast_records, start_date, end_date):
                 "forecast_publish_time": row.publishTime_forecast.isoformat().replace("+00:00", "Z"),
             }
             for row in merged.itertuples()
+        ],
+        "shortfalls": [
+            {
+                "delivery_time": row.startTime.isoformat().replace("+00:00", "Z"),
+                "forecast_publish_time": row.publishTime_forecast.isoformat().replace("+00:00", "Z"),
+                "outturn": float(row.generation_actual),
+                "forecast": float(row.generation_forecast),
+                "gap": float(row.gap),
+            }
+            for row in shortfalls.itertuples()
         ],
     }
 

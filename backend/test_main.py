@@ -27,13 +27,19 @@ class WindAnalysisTests(unittest.TestCase):
              "generation": 10},
         ]
         result = analyse_wind(actual, forecasts, date(2026, 1, 2), date(2026, 1, 2))
-        self.assertEqual(result["metrics"], {"mae": 15.0, "mape": 20.0, "bias": -5.0})
+        self.assertEqual(result["metrics"], {
+            "mae": 15.0,
+            "mape": 20.0,
+            "bias": -5.0,
+            "matched_coverage": {"matched": 2, "expected": 48},
+        })
         self.assertEqual(result["metadata"], {
             "start_date": "2026-01-02",
             "end_date": "2026-01-02",
             "decision_cutoff": "11:00 Europe/London on D-1",
             "actual_points": 2,
             "matched_points": 2,
+            "expected_points": 48,
             "coverage_pct": 100.0,
             "mape_sample_count": 1,
             "latest_forecast_publish_time": "2026-01-01T11:00:00Z",
@@ -44,6 +50,54 @@ class WindAnalysisTests(unittest.TestCase):
             {"startTime": "2026-01-02T13:00:00Z", "actual_generation": 0.0,
              "forecast_generation": 10.0, "forecast_publish_time": "2026-01-01T10:00:00Z"},
         ])
+        self.assertEqual(result["shortfalls"], [{
+            "delivery_time": "2026-01-02T12:00:00Z",
+            "forecast_publish_time": "2026-01-01T11:00:00Z",
+            "outturn": 100.0,
+            "forecast": 80.0,
+            "gap": 20.0,
+        }])
+
+    def test_shortfalls_are_strictly_positive_sorted_and_limited_to_five(self):
+        actual = [
+            {
+                "fuelType": "WIND",
+                "startTime": f"2026-01-02T{12 + index // 2:02d}:{(index % 2) * 30:02d}:00Z",
+                "publishTime": "2026-01-02T16:00:00Z",
+                "generation": 100 + index * 20,
+            }
+            for index in range(7)
+        ]
+        forecasts = [
+            {
+                "startTime": row["startTime"],
+                "publishTime": "2026-01-01T10:00:00Z",
+                "generation": 100,
+            }
+            for row in actual
+        ]
+
+        result = analyse_wind(actual, forecasts, date(2026, 1, 2), date(2026, 1, 2))
+
+        self.assertEqual(result["metrics"]["matched_coverage"], {
+            "matched": 7,
+            "expected": 48,
+        })
+        self.assertEqual(
+            [row["gap"] for row in result["shortfalls"]],
+            [120.0, 100.0, 80.0, 60.0, 40.0],
+        )
+        self.assertEqual(
+            [row["delivery_time"] for row in result["shortfalls"]],
+            [
+                "2026-01-02T15:00:00Z",
+                "2026-01-02T14:30:00Z",
+                "2026-01-02T14:00:00Z",
+                "2026-01-02T13:30:00Z",
+                "2026-01-02T13:00:00Z",
+            ],
+        )
+        self.assertTrue(all(row["outturn"] > row["forecast"] for row in result["shortfalls"]))
 
     def test_dst_deadline_uses_uk_calendar_day(self):
         actual = [{"fuelType": "WIND", "startTime": "2026-03-30T11:00:00Z",
@@ -55,7 +109,12 @@ class WindAnalysisTests(unittest.TestCase):
              "generation": 200},
         ]
         result = analyse_wind(actual, forecasts, date(2026, 3, 30), date(2026, 3, 30))
-        self.assertEqual(result["metrics"], {"mae": 10.0, "mape": 10.0, "bias": -10.0})
+        self.assertEqual(result["metrics"], {
+            "mae": 10.0,
+            "mape": 10.0,
+            "bias": -10.0,
+            "matched_coverage": {"matched": 1, "expected": 48},
+        })
 
     def test_empty_match_raises_not_found(self):
         with self.assertRaises(HTTPException) as error:
