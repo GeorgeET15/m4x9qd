@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import axios from 'axios'
 import {
-  CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -46,13 +44,18 @@ function validateAnalysisPayload(data) {
     Number.isFinite(data?.metrics?.mape) &&
     Number.isFinite(data?.metrics?.bias)
   const hasCoverage =
-    Number.isFinite(data?.metadata?.matched_points) &&
-    Number.isFinite(data?.metadata?.actual_points) &&
-    Number.isFinite(data?.metadata?.coverage_pct)
+    Number.isFinite(data?.metrics?.matched_coverage?.matched) &&
+    Number.isFinite(data?.metrics?.matched_coverage?.expected) &&
+    Number.isFinite(data?.metadata?.mape_sample_count)
 
-  if (!hasMetrics || !hasCoverage || !Array.isArray(data?.chart_data)) {
+  if (
+    !hasMetrics ||
+    !hasCoverage ||
+    !Array.isArray(data?.chart_data) ||
+    !Array.isArray(data?.shortfalls)
+  ) {
     throw new Error(
-      'The backend response is missing bias or coverage data. Rebuild and restart the backend to load the updated API.',
+      'The backend response is missing forecast coverage or shortfall data. Rebuild and restart the backend to load the updated API.',
     )
   }
   return data
@@ -64,16 +67,16 @@ function getAnalysisErrorMessage(error) {
   return 'The wind analysis service is unavailable. Check the backend connection and try again.'
 }
 
-function MetricReadout({ label, value, unit, detail, className = '' }) {
+function MetricReadout({ label, value, unit, detail, isPrimary = false }) {
   return (
-    <div className={`metric-readout ${className}`}>
-      <p className="metric-label">{label}</p>
+    <article className={`metric-card${isPrimary ? ' metric-card-primary' : ''}`}>
+      <h2 className="metric-label">{label}</h2>
       <p className="metric-value">
         {value}
         {unit && <span>{unit}</span>}
       </p>
       <p className="metric-detail">{detail}</p>
-    </div>
+    </article>
   )
 }
 
@@ -133,46 +136,47 @@ function ForecastTooltip({ active, payload, label }) {
 
 function App() {
   const [chartData, setChartData] = useState([])
+  const [shortfalls, setShortfalls] = useState([])
   const [metrics, setMetrics] = useState(null)
   const [metadata, setMetadata] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
 
+  const fetchAnalysis = useCallback(async () => {
+    const response = await axios.get(API_URL, {
+      params: REQUEST_PARAMS,
+    })
+    return validateAnalysisPayload(response.data)
+  }, [])
+
+  const applyAnalysis = useCallback((data) => {
+    setChartData(data.chart_data)
+    setShortfalls(data.shortfalls)
+    setMetrics(data.metrics)
+    setMetadata(data.metadata)
+    setError(null)
+    setLastUpdated(new Date())
+  }, [])
+
   const loadAnalysis = useCallback(async () => {
     try {
-      const response = await axios.get(API_URL, {
-        params: REQUEST_PARAMS,
-      })
-      const data = validateAnalysisPayload(response.data)
-      setChartData(data.chart_data)
-      setMetrics(data.metrics)
-      setMetadata(data.metadata)
-      setError(null)
-      setLastUpdated(new Date())
+      applyAnalysis(await fetchAnalysis())
     } catch (requestError) {
       setError(getAnalysisErrorMessage(requestError))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [applyAnalysis, fetchAnalysis])
 
   useEffect(() => {
     let active = true
-    axios
-      .get(API_URL, { params: REQUEST_PARAMS })
-      .then((response) => {
-        if (!active) return
-        const data = validateAnalysisPayload(response.data)
-        setChartData(data.chart_data)
-        setMetrics(data.metrics)
-        setMetadata(data.metadata)
-        setError(null)
-        setLastUpdated(new Date())
+    fetchAnalysis()
+      .then((data) => {
+        if (active) applyAnalysis(data)
       })
       .catch((requestError) => {
-        if (!active) return
-        setError(getAnalysisErrorMessage(requestError))
+        if (active) setError(getAnalysisErrorMessage(requestError))
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -181,34 +185,20 @@ function App() {
     return () => {
       active = false
     }
-  }, [])
+  }, [applyAnalysis, fetchAnalysis])
 
   const refreshAnalysis = () => {
     setLoading(true)
     loadAnalysis()
   }
 
-  const tickInterval = useMemo(
-    () => Math.max(Math.ceil(chartData.length / 10) - 1, 0),
-    [chartData.length],
-  )
-
-  const underForecastPeriods = useMemo(
-    () =>
-      chartData
-        .map((point) => ({
-          ...point,
-          shortfall: point.actual_generation - point.forecast_generation,
-        }))
-        .filter((point) => point.shortfall > 0)
-        .sort((left, right) => right.shortfall - left.shortfall)
-        .slice(0, 5),
-    [chartData],
-  )
-
-  const coverage = metadata
-    ? `${formatNumber(metadata.matched_points)} / ${formatNumber(metadata.actual_points)}`
-    : '—'
+  const matched = metrics?.matched_coverage?.matched
+  const expected = metrics?.matched_coverage?.expected
+  const coverage = `${formatNumber(matched)} / ${formatNumber(expected)}`
+  const coveragePercent =
+    Number.isFinite(matched) && Number.isFinite(expected) && expected > 0
+      ? Math.round((matched / expected) * 100)
+      : null
 
   return (
     <main className="app-shell">
@@ -218,13 +208,13 @@ function App() {
             <span className="brand-mark" aria-hidden="true">
               N
             </span>
-            <span>
+            <span className="brand-wordmark">
               <strong>northstar</strong>
               <small>ENERGY TRADING</small>
             </span>
           </div>
           <div className="topbar-right">
-            <span className="live-indicator">
+            <span className="source-indicator">
               <span aria-hidden="true" />
               ELEXON BMRS
             </span>
@@ -242,17 +232,17 @@ function App() {
           </div>
         </header>
 
-        <section className="hero">
+        <section className="page-heading">
           <div>
             <h1>Wind forecast accuracy</h1>
-            <p className="hero-copy">
+            <p className="page-subtitle">
               A decision-time view of Elexon’s national wind forecast against
               realised generation.
             </p>
           </div>
           <div className="period-panel">
             <span className="period-label">Delivery window</span>
-            <time dateTime="2026-01">01—31 Jan 2026</time>
+            <time dateTime="2026-01">01-31 Jan 2026</time>
             <span className="period-meta">Great Britain · all times UK</span>
           </div>
         </section>
@@ -291,8 +281,8 @@ function App() {
                 label="Mean absolute error"
                 value={formatMetric(metrics?.mae)}
                 unit="MW"
-                detail="Per matched timestamp"
-                className="primary-metric"
+                detail={`Across ${formatNumber(matched)} matched periods`}
+                isPrimary
               />
               <MetricReadout
                 label="Mean absolute percentage error"
@@ -304,13 +294,12 @@ function App() {
                 label="Forecast bias"
                 value={formatMetric(metrics?.bias)}
                 unit="MW"
-                detail="Forecast − actual · positive is over-forecast"
+                detail="Positive values indicate over-forecast"
               />
               <MetricReadout
                 label="Matched coverage"
                 value={coverage}
-                unit=""
-                detail={`${formatMetric(metadata?.coverage_pct)}% exact matches`}
+                detail={`${coveragePercent ?? '—'}% of ${formatNumber(expected)} expected periods`}
               />
             </section>
 
@@ -324,6 +313,17 @@ function App() {
                   <span className="unit-tag">JAN 2026</span>
                 </div>
 
+                <div className="chart-legend" aria-label="Chart series">
+                  <span>
+                    <i className="legend-line legend-actual" aria-hidden="true" />
+                    Actual
+                  </span>
+                  <span>
+                    <i className="legend-line legend-forecast" aria-hidden="true" />
+                    Day-ahead forecast
+                  </span>
+                </div>
+
                 {chartData.length === 0 ? (
                   <div className="empty-chart">No matched periods to chart.</div>
                 ) : (
@@ -331,63 +331,46 @@ function App() {
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={chartData}
-                        margin={{ top: 14, right: 12, bottom: 4, left: 0 }}
+                        margin={{ top: 12, right: 12, bottom: 0, left: 0 }}
                       >
-                        <CartesianGrid
-                          stroke="#e2ecef"
-                          strokeDasharray="2 6"
-                          vertical={false}
-                        />
                         <XAxis
                           dataKey="startTime"
-                          interval={tickInterval}
                           minTickGap={32}
                           tickFormatter={(value) =>
                             formatUKTime(value, { day: '2-digit', month: 'short' })
                           }
-                          tick={{ fill: '#49616d', fontSize: 11 }}
+                          tick={{ fill: '#64748b', fontSize: 10 }}
                           tickLine={false}
-                          axisLine={{ stroke: '#cbdde3' }}
+                          axisLine={false}
                         />
                         <YAxis
-                          width={58}
+                          width={48}
                           tickFormatter={formatNumber}
-                          tick={{ fill: '#49616d', fontSize: 11 }}
+                          tick={{ fill: '#64748b', fontSize: 10 }}
                           tickLine={false}
                           axisLine={false}
                         />
                         <Tooltip content={<ForecastTooltip />} />
-                        <Legend
-                          align="right"
-                          verticalAlign="top"
-                          iconType="circle"
-                          iconSize={7}
-                          wrapperStyle={{
-                            fontSize: '12px',
-                            color: '#49616d',
-                            paddingBottom: '18px',
-                          }}
-                        />
                         <Line
                           type="monotone"
                           dataKey="actual_generation"
                           name="Actual"
-                          stroke="#087c67"
-                          strokeWidth={2.5}
+                          stroke="#0f766e"
+                          strokeWidth={2.25}
                           isAnimationActive={false}
                           dot={false}
-                          activeDot={{ r: 4, fill: '#087c67', stroke: '#ffffff', strokeWidth: 2 }}
+                          activeDot={{ r: 4, fill: '#0f766e', stroke: '#ffffff', strokeWidth: 2 }}
                         />
                         <Line
                           type="monotone"
                           dataKey="forecast_generation"
                           name="Day-ahead forecast"
-                          stroke="#a96300"
-                          strokeWidth={2.25}
+                          stroke="#b45309"
+                          strokeWidth={2}
                           strokeDasharray="4 5"
                           isAnimationActive={false}
                           dot={false}
-                          activeDot={{ r: 4, fill: '#a96300', stroke: '#ffffff', strokeWidth: 2 }}
+                          activeDot={{ r: 4, fill: '#b45309', stroke: '#ffffff', strokeWidth: 2 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -421,13 +404,13 @@ function App() {
                   <div>
                     <h2>Where wind fell short</h2>
                     <p className="panel-description">
-                      Largest outturn-above-forecast intervals
+                      Largest outturn-above-forecast gaps · MW
                     </p>
                   </div>
                   <span className="risk-tag">SHORTFALLS</span>
                 </div>
 
-                {underForecastPeriods.length === 0 ? (
+                {shortfalls.length === 0 ? (
                   <div className="empty-watchlist">
                     No forecast shortfalls in the matched periods.
                   </div>
@@ -436,18 +419,18 @@ function App() {
                     <table>
                       <thead>
                         <tr>
-                          <th>DELIVERY (UK)</th>
-                          <th>OUTTURN</th>
-                          <th>FORECAST</th>
-                          <th>GAP</th>
+                          <th scope="col">DELIVERY (UK)</th>
+                          <th scope="col">OUTTURN</th>
+                          <th scope="col">FORECAST</th>
+                          <th scope="col">GAP</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {underForecastPeriods.map((point) => (
-                          <tr key={point.startTime}>
+                        {shortfalls.map((row) => (
+                          <tr key={row.delivery_time}>
                             <td>
                               <strong>
-                                {formatUKTime(point.startTime, {
+                                {formatUKTime(row.delivery_time, {
                                   day: '2-digit',
                                   month: 'short',
                                   hour: '2-digit',
@@ -456,7 +439,7 @@ function App() {
                               </strong>
                               <small>
                                 Issued{' '}
-                                {formatUKTime(point.forecast_publish_time, {
+                                {formatUKTime(row.forecast_publish_time, {
                                   day: '2-digit',
                                   month: 'short',
                                   hour: '2-digit',
@@ -464,11 +447,9 @@ function App() {
                                 })}
                               </small>
                             </td>
-                            <td>{formatNumber(point.actual_generation)}</td>
-                            <td>{formatNumber(point.forecast_generation)}</td>
-                            <td className="shortfall">
-                              +{formatNumber(point.shortfall)} MW
-                            </td>
+                            <td>{formatNumber(row.outturn)}</td>
+                            <td>{formatNumber(row.forecast)}</td>
+                            <td className="shortfall">+{formatNumber(row.gap)}</td>
                           </tr>
                         ))}
                       </tbody>
