@@ -15,6 +15,12 @@ const START_DATE = '2026-01-01'
 const END_DATE = '2026-01-31'
 const UK_TIMEZONE = 'Europe/London'
 const REQUEST_PARAMS = { start_date: START_DATE, end_date: END_DATE }
+const ASSISTANT_EXAMPLE_QUESTIONS = [
+  'Summarize January forecast accuracy and matched coverage.',
+  'What does the forecast bias indicate?',
+  'Which delivery periods had the largest wind shortfalls?',
+  'How do mean actual and forecast generation compare?',
+]
 
 const numberFormatter = new Intl.NumberFormat('en-GB', {
   maximumFractionDigits: 0,
@@ -140,14 +146,6 @@ function CloseIcon() {
   )
 }
 
-function SubmitIcon() {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M3.5 10h12M10 4.5l5.5 5.5-5.5 5.5" />
-    </svg>
-  )
-}
-
 function ForecastTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
 
@@ -197,6 +195,7 @@ function App() {
   const [assistantLoading, setAssistantLoading] = useState(false)
   const assistantTriggerRef = useRef(null)
   const assistantInputRef = useRef(null)
+  const assistantMessageSequenceRef = useRef(0)
 
   const fetchAnalysis = useCallback(async () => {
     const response = await axios.get(API_URL, {
@@ -266,22 +265,22 @@ function App() {
     loadAnalysis()
   }
 
-  const submitAssistantQuestion = async (event) => {
-    event.preventDefault()
-    const question = assistantQuestion.trim()
-    if (!question || !metrics || assistantLoading) return
+  const askAssistant = async (question) => {
+    const trimmedQuestion = question.trim()
+    if (!trimmedQuestion || !metrics || assistantLoading) return
 
-    const messageId = `${Date.now()}-${assistantMessages.length}`
+    assistantMessageSequenceRef.current += 1
+    const messageId = `assistant-${assistantMessageSequenceRef.current}`
     setAssistantMessages((messages) => [
       ...messages,
-      { id: messageId, question, answer: null, error: null },
+      { id: messageId, question: trimmedQuestion, answer: null, error: null },
     ])
     setAssistantQuestion('')
     setAssistantLoading(true)
 
     try {
       const response = await axios.post(ASSISTANT_API_URL, {
-        question,
+        question: trimmedQuestion,
         context: {
           metrics,
           shortfalls,
@@ -314,6 +313,11 @@ function App() {
     }
   }
 
+  const submitAssistantQuestion = (event) => {
+    event.preventDefault()
+    askAssistant(assistantQuestion)
+  }
+
   const matched = metrics?.matched_coverage?.matched
   const expected = metrics?.matched_coverage?.expected
   const coverage = `${formatNumber(matched)} / ${formatNumber(expected)}`
@@ -323,8 +327,10 @@ function App() {
       : null
 
   return (
-    <main className="app-shell">
-      <div className="dashboard">
+    <main className="app-shell flex h-screen overflow-hidden bg-slate-50 font-sans">
+      <div
+        className={`dashboard flex-1 overflow-y-auto p-8${assistantOpen ? ' assistant-is-open' : ''}`}
+      >
         <header className="topbar">
           <div className="brand">
             <span className="brand-mark" aria-hidden="true">
@@ -354,7 +360,7 @@ function App() {
             <button
               ref={assistantTriggerRef}
               className="refresh-button assistant-trigger"
-              onClick={() => setAssistantOpen(true)}
+              onClick={() => setAssistantOpen((open) => !open)}
               aria-controls="assistant-panel"
               aria-expanded={assistantOpen}
               type="button"
@@ -633,95 +639,107 @@ function App() {
           </span>
         </footer>
       </div>
-      {assistantOpen && (
-        <aside
-          id="assistant-panel"
-          className="assistant-panel"
-          aria-label="Dashboard assistant"
-        >
-          <header className="assistant-header">
-            <div>
-              <h2>Dashboard assistant</h2>
-              <p>Current dashboard data · January 2026</p>
-            </div>
-            <button
-              className="assistant-close"
-              onClick={() => {
-                setAssistantOpen(false)
-                assistantTriggerRef.current?.focus()
-              }}
-              type="button"
-              aria-label="Close assistant"
-            >
-              <CloseIcon />
-            </button>
-          </header>
+      <aside
+        id="assistant-panel"
+        className={`assistant-sidebar w-96 flex-shrink-0 bg-slate-100 border-l border-slate-300 flex flex-col h-full${assistantOpen ? ' is-open' : ''}`}
+        aria-label="Dashboard assistant"
+        aria-hidden={!assistantOpen}
+        aria-labelledby="assistant-title"
+        inert={!assistantOpen}
+      >
+        <div className="assistant-header p-4 border-b border-slate-200 flex justify-between items-center">
+          <div>
+            <h2 id="assistant-title">Dashboard Assistant</h2>
+            <p>Current dashboard data · January 2026</p>
+          </div>
+          <button
+            className="assistant-close"
+            onClick={() => {
+              setAssistantOpen(false)
+              assistantTriggerRef.current?.focus()
+            }}
+            type="button"
+            aria-label="Close assistant"
+          >
+            <CloseIcon />
+          </button>
+        </div>
 
-          <div className="assistant-log" role="log" aria-live="polite">
-            {assistantMessages.length === 0 ? (
+        <div
+          className="assistant-log flex-1 overflow-y-auto p-5 space-y-6"
+          role="log"
+          aria-live="polite"
+        >
+          {assistantMessages.length === 0 ? (
+            <div className="assistant-welcome">
               <p className="assistant-empty">
                 Ask about the metrics, matched periods, or listed shortfalls.
-                Answers are limited to the data currently shown on the
-                dashboard.
+                Answers use only the data currently shown; live prices and
+                market data are not included.
               </p>
-            ) : (
-              assistantMessages.map((message) => (
-                <article className="assistant-entry" key={message.id}>
-                  <div className="assistant-query">
+              <div className="assistant-examples">
+                <h3>Example questions</h3>
+                {ASSISTANT_EXAMPLE_QUESTIONS.map((question) => (
+                  <button
+                    className="assistant-example"
+                    key={question}
+                    type="button"
+                    disabled={!metrics || assistantLoading}
+                    onClick={() => askAssistant(question)}
+                  >
                     <span aria-hidden="true">&gt;</span>
-                    <p>{message.question}</p>
-                  </div>
-                  {message.answer && (
-                    <p className="assistant-answer">{message.answer}</p>
-                  )}
-                  {message.error && (
-                    <p className="assistant-error" role="alert">
-                      Request failed: {message.error}
-                    </p>
-                  )}
-                </article>
-              ))
-            )}
-            {assistantLoading && (
-              <p className="assistant-loading" role="status">
-                <span aria-hidden="true" />
-                Querying data model...
-              </p>
-            )}
-          </div>
-
-          <form className="assistant-form" onSubmit={submitAssistantQuestion}>
-            <label className="assistant-input-label" htmlFor="assistant-question">
-              Ask about this dashboard
-            </label>
-            <div className="assistant-input-row">
-              <input
-                ref={assistantInputRef}
-                id="assistant-question"
-                type="text"
-                value={assistantQuestion}
-                onChange={(event) => setAssistantQuestion(event.target.value)}
-                placeholder={
-                  metrics ? 'Enter a data question...' : 'Waiting for dashboard data...'
-                }
-                maxLength={2000}
-                disabled={!metrics || assistantLoading}
-              />
-              <button
-                type="submit"
-                className="assistant-submit"
-                aria-label="Send question"
-                disabled={!metrics || assistantLoading || !assistantQuestion.trim()}
-              >
-                <SubmitIcon />
-              </button>
+                    {question}
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="assistant-disclaimer">
-              Responses use only the metrics and chart data shown here.
-            </p>
+          ) : (
+            assistantMessages.map((message) => (
+              <article className="assistant-entry" key={message.id}>
+                <div className="assistant-query font-mono text-xs text-slate-800">
+                  <span className="font-bold mr-2" aria-hidden="true">&gt;</span>
+                  {message.question}
+                </div>
+                {message.answer && (
+                  <div className="assistant-answer text-teal-900 text-sm pl-4 border-l-2 border-teal-700/40 whitespace-pre-wrap leading-relaxed">
+                    {message.answer}
+                  </div>
+                )}
+                {message.error && (
+                  <p className="assistant-error" role="alert">
+                    Request failed: {message.error}
+                  </p>
+                )}
+              </article>
+            ))
+          )}
+          {assistantLoading && (
+            <div className="assistant-loading" role="status">
+              Querying data model...
+            </div>
+          )}
+        </div>
+
+        <div className="assistant-input-area p-4 border-t border-slate-300 bg-slate-50">
+          <form onSubmit={submitAssistantQuestion}>
+            <input
+              ref={assistantInputRef}
+              id="assistant-question"
+              type="text"
+              className="assistant-query-input w-full bg-transparent border-b border-slate-400 focus:outline-none focus:border-teal-700 text-sm py-2 text-slate-800 placeholder-slate-400 transition-colors"
+              value={assistantQuestion}
+              onChange={(event) => setAssistantQuestion(event.target.value)}
+              placeholder="Query dataset... (Press Enter)"
+              maxLength={2000}
+              disabled={!metrics || assistantLoading}
+              aria-label="Query dashboard dataset"
+            />
           </form>
-        </aside>
-      )}
+          <p className="assistant-disclaimer">
+            Enter submits · Responses use only dashboard data
+          </p>
+        </div>
+      </aside>
     </main>
   )
 }
