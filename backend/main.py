@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 import pandas as pd
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -17,6 +18,8 @@ from google.genai.errors import APIError
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 app = FastAPI()
 cors_origins = [
