@@ -95,7 +95,7 @@ a:focus:not(:focus-visible) {
 }
 
 .topbar {
-  min-height: 60px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -105,68 +105,99 @@ a:focus:not(:focus-visible) {
 
 .brand {
   display: inline-flex;
-  align-items: center;
-  gap: 9px;
+  align-items: baseline;
+  gap: 8px;
 }
 
-.brand-mark {
-  width: 30px;
-  height: 30px;
+.brand-star {
+  width: 14px;
+  height: 14px;
+  align-self: center;
   display: grid;
   place-items: center;
-  border-radius: 2px;
-  background: #172554;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+  color: var(--teal);
 }
 
-.brand-wordmark strong,
-.brand-wordmark small {
-  display: block;
+.brand-star svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
 }
 
-.brand-wordmark strong {
+.brand-name {
   color: var(--ink);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 650;
   letter-spacing: -0.4px;
-  line-height: 1.15;
 }
 
-.brand-wordmark small {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 0.9px;
-  line-height: 1;
+.brand-context {
+  margin-left: 2px;
+  padding-left: 10px;
+  border-left: 1px solid #cbd5e1;
+  color: var(--subtle);
+  font-size: 12px;
 }
 
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 17px;
+  gap: 10px;
 }
 
-.source-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.6px;
+.topbar-source {
+  margin-right: 4px;
+  color: var(--subtle);
+  font-size: 11px;
   white-space: nowrap;
 }
 
-.source-indicator > span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 0 3px #15803d1a;
+.icon-button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: #eef2f5;
+  color: var(--ink);
+}
+
+.icon-button:disabled {
+  cursor: wait;
+}
+
+.assistant-button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--teal);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 140ms ease;
+}
+
+.assistant-button:hover {
+  background: #115e59;
+}
+
+.assistant-button .assistant-icon {
+  color: #fff;
 }
 
 .refresh-button,
@@ -236,12 +267,11 @@ a:focus:not(:focus-visible) {
 }
 
 .page-heading {
-  min-height: 126px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 28px;
-  padding: 20px 0;
+  padding: 26px 0 22px;
 }
 
 .page-heading > div:first-child {
@@ -268,20 +298,11 @@ a:focus:not(:focus-visible) {
 }
 
 .period-panel {
-  min-width: 222px;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding-left: 16px;
-  border-left: 1px solid var(--line);
-}
-
-.period-label {
-  color: var(--muted);
-  font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 0.75px;
-  text-transform: uppercase;
+  text-align: right;
 }
 
 .period-panel time {
@@ -291,8 +312,8 @@ a:focus:not(:focus-visible) {
 }
 
 .period-meta {
-  color: var(--muted);
-  font-size: 10px;
+  color: var(--subtle);
+  font-size: 11px;
 }
 
 .metrics-strip {
@@ -1381,9 +1402,7 @@ a:focus:not(:focus-visible) {
   }
 
   .period-panel {
-    min-width: 0;
-    padding: 0;
-    border: 0;
+    text-align: left;
   }
 
   .metrics-strip {
@@ -1414,29 +1433,31 @@ a:focus:not(:focus-visible) {
   }
 
   .topbar {
-    min-height: 56px;
+    min-height: 52px;
     flex-wrap: wrap;
     gap: 7px;
     padding: 8px 0;
   }
 
+  .brand-context,
+  .topbar-source {
+    display: none;
+  }
+
   .topbar-right {
-    width: 100%;
-    justify-content: flex-end;
+    width: auto;
     gap: 7px;
   }
 
-  .source-indicator {
-    gap: 5px;
-    font-size: 9px;
-    letter-spacing: 0.25px;
+  .icon-button {
+    width: 28px;
+    height: 28px;
   }
 
-  .refresh-button {
-    min-height: 32px;
-    gap: 5px;
-    padding: 0 7px;
-    font-size: 10px;
+  .assistant-button {
+    min-height: 28px;
+    padding: 0 9px;
+    font-size: 11px;
   }
 
   .refresh-icon {

@@ -111,6 +111,14 @@ function MetricReadout({ label, value, unit, detail, isPrimary = false }) {
   )
 }
 
+function NorthStarIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M10 1.5 12 8l6.5 2L12 12l-2 6.5L8 12l-6.5-2L8 8l2-6.5Z" />
+    </svg>
+  )
+}
+
 function RefreshIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -583,33 +591,29 @@ function App() {
       >
         <header className="topbar">
           <div className="brand">
-            <span className="brand-mark" aria-hidden="true">
-              N
+            <span className="brand-star" aria-hidden="true">
+              <NorthStarIcon />
             </span>
-            <span className="brand-wordmark">
-              <strong>northstar</strong>
-              <small>ENERGY TRADING</small>
-            </span>
+            <span className="brand-name">northstar</span>
+            <span className="brand-context">Day-ahead wind desk</span>
           </div>
           <div className="topbar-right">
-            <span className="source-indicator">
-              <span aria-hidden="true" />
-              ELEXON BMRS
-            </span>
+            <span className="topbar-source">Elexon BMRS</span>
             <button
-              className="refresh-button"
+              className="icon-button"
               onClick={refreshAnalysis}
               disabled={loading}
               type="button"
+              aria-label="Refresh data"
+              title="Refresh data"
             >
               <span className={loading ? 'refresh-icon is-loading' : 'refresh-icon'}>
                 <RefreshIcon />
               </span>
-              {loading ? 'Updating' : 'Refresh data'}
             </button>
             <button
               ref={assistantTriggerRef}
-              className="refresh-button assistant-trigger"
+              className="assistant-button"
               onClick={() => setAssistantOpen((open) => !open)}
               aria-controls="assistant-panel"
               aria-expanded={assistantOpen}
@@ -618,7 +622,7 @@ function App() {
               <span className="assistant-icon">
                 <AssistantIcon />
               </span>
-              Ask Assistant
+              Assistant
             </button>
           </div>
         </header>
@@ -632,9 +636,8 @@ function App() {
             </p>
           </div>
           <div className="period-panel">
-            <span className="period-label">Delivery window</span>
-            <time dateTime="2026-01">01-31 Jan 2026</time>
-            <span className="period-meta">Great Britain · all times UK</span>
+            <time dateTime="2026-01">1–31 January 2026</time>
+            <span className="period-meta">Delivery window · Great Britain · UK time</span>
           </div>
         </section>
 
