@@ -164,6 +164,7 @@ class WindAnalysisTests(unittest.TestCase):
         result = analyse_wind(actual, forecasts, date(2026, 1, 2), date(2026, 1, 2))
         self.assertEqual(result["metrics"], {
             "mae": 15.0,
+            "rmse": 250 ** 0.5,
             "mape": 20.0,
             "bias": -5.0,
             "matched_coverage": {"matched": 2, "expected": 48},
@@ -246,6 +247,7 @@ class WindAnalysisTests(unittest.TestCase):
         result = analyse_wind(actual, forecasts, date(2026, 3, 30), date(2026, 3, 30))
         self.assertEqual(result["metrics"], {
             "mae": 10.0,
+            "rmse": 10.0,
             "mape": 10.0,
             "bias": -10.0,
             "matched_coverage": {"matched": 1, "expected": 48},
@@ -255,6 +257,24 @@ class WindAnalysisTests(unittest.TestCase):
         with self.assertRaises(HTTPException) as error:
             analyse_wind([], [], date(2026, 1, 1), date(2026, 1, 1))
         self.assertEqual(error.exception.status_code, 404)
+
+    def test_rmse_penalises_larger_errors(self):
+        actual = [
+            {"fuelType": "WIND", "startTime": "2026-01-02T12:00:00Z",
+             "publishTime": "2026-01-02T12:30:00Z", "generation": 100},
+            {"fuelType": "WIND", "startTime": "2026-01-02T12:30:00Z",
+             "publishTime": "2026-01-02T13:00:00Z", "generation": 110},
+        ]
+        forecasts = [
+            {"startTime": "2026-01-02T12:00:00Z", "publishTime": "2026-01-01T10:00:00Z",
+             "generation": 90},
+        ]
+
+        result = analyse_wind(actual, forecasts, date(2026, 1, 2), date(2026, 1, 2))
+
+        self.assertEqual(result["metrics"]["mae"], 15.0)
+        self.assertAlmostEqual(result["metrics"]["rmse"], 250 ** 0.5)
+        self.assertGreater(result["metrics"]["rmse"], result["metrics"]["mae"])
 
     def test_hourly_forecast_covers_both_half_hourly_periods(self):
         actual = [

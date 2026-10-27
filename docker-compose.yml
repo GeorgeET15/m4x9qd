@@ -18,7 +18,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: /api/wind-analysis
+        VITE_API_URL: /api
     depends_on:
       backend:
         condition: service_healthy

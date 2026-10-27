@@ -9,8 +9,9 @@ import {
   YAxis,
 } from 'recharts'
 
-const API_URL = import.meta.env.VITE_API_URL || '/api/wind-analysis'
-const ASSISTANT_API_URL = '/api/ask-assistant'
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')
+const API_URL = `${API_BASE_URL}/wind-analysis`
+const ASSISTANT_API_URL = `${API_BASE_URL}/ask-assistant`
 const START_DATE = '2026-01-01'
 const END_DATE = '2026-01-31'
 const UK_TIMEZONE = 'Europe/London'
@@ -72,6 +73,7 @@ function summarizeChartData(data) {
 function validateAnalysisPayload(data) {
   const hasMetrics =
     Number.isFinite(data?.metrics?.mae) &&
+    Number.isFinite(data?.metrics?.rmse) &&
     Number.isFinite(data?.metrics?.mape) &&
     Number.isFinite(data?.metrics?.bias)
   const hasCoverage =
@@ -667,6 +669,12 @@ function App() {
                 unit="MW"
                 detail={`Across ${formatNumber(matched)} matched periods`}
                 isPrimary
+              />
+              <MetricReadout
+                label="Root mean square error"
+                value={formatMetric(metrics?.rmse)}
+                unit="MW"
+                detail="Weights larger misses more heavily"
               />
               <MetricReadout
                 label="Mean absolute percentage error"

@@ -9,6 +9,7 @@ The app is an analysis aid, not a dispatch or trading recommendation. It uses on
 ## What the dashboard shows
 
 - **MAE**: average absolute forecast error in MW.
+- **RMSE**: root mean squared error in MW. Like MAE, but larger misses weigh more heavily.
 - **MAPE**: mean absolute percentage error. Periods with zero actual generation are excluded because percentage error is undefined at zero.
 - **Bias**: mean forecast minus actual in MW; positive values mean over-forecasting.
 - **Matched coverage**: the number of actual intervals whose delivery hour has an eligible forecast divided by valid actual intervals.
@@ -88,11 +89,13 @@ npm ci
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Vite proxies `/api` to `http://localhost:8000`. For a separately hosted API, set `VITE_API_URL` to its full `/api/wind-analysis` URL before building, for example:
+Open [http://localhost:5173](http://localhost:5173). Vite proxies `/api` to `http://localhost:8000`. For a separately hosted API, set `VITE_API_URL` to the backend's API base path before building — the frontend appends `/wind-analysis` and `/ask-assistant` to it:
 
 ```bash
-VITE_API_URL=https://your-backend.example/api/wind-analysis npm run build
+VITE_API_URL=https://your-backend.example/api npm run build
 ```
+
+`VITE_API_URL` defaults to `/api` (same-origin). It must be the base path only — not the full `/api/wind-analysis` endpoint — or the request URLs will contain duplicated path segments.
 
 ## API
 
@@ -102,7 +105,7 @@ VITE_API_URL=https://your-backend.example/api/wind-analysis npm run build
 /api/wind-analysis?start_date=2026-01-01&end_date=2026-01-31
 ```
 
-The default dates are `2026-01-01` through `2026-01-31`. The response contains `metrics` (`mae`, `mape`, forecast `bias`, and `matched_coverage` with matched and expected period counts), `metadata` (including selected forecast coverage and the latest included publication time), `chart_data` (including each selected forecast publication time), and `shortfalls` (the five largest positive actual-minus-forecast gaps, with delivery and forecast publication times). Expected coverage is 48 half-hour periods per requested calendar day, or 1,488 for January 2026.
+The default dates are `2026-01-01` through `2026-01-31`. The response contains `metrics` (`mae`, `rmse`, `mape`, forecast `bias`, and `matched_coverage` with matched and expected period counts), `metadata` (including selected forecast coverage and the latest included publication time), `chart_data` (including each selected forecast publication time), and `shortfalls` (the five largest positive actual-minus-forecast gaps, with delivery and forecast publication times). Expected coverage is 48 half-hour periods per requested calendar day, or 1,488 for January 2026.
 
 ### Dashboard assistant
 
@@ -144,7 +147,7 @@ npm run build
 
 ## Deployment
 
-The frontend is configured for Vercel (`frontend/` as the project root). Set `VITE_API_URL` to the deployed backend's `/api/wind-analysis` URL in the Vercel project settings.
+The frontend is configured for Vercel (`frontend/` as the project root). Set `VITE_API_URL` to the deployed backend's API base path, `https://<backend-app-name>.herokuapp.com/api`, in the Vercel project settings.
 
 The backend has a Dockerfile and `heroku.yml`. Configure `CORS_ORIGINS` on the backend to the exact deployed frontend origin (comma-separated if multiple origins are needed). The current default `*` is convenient for local pilot use and should be replaced for deployment.
 
@@ -157,7 +160,7 @@ heroku git:remote -a <backend-app-name>
 git push heroku main
 ```
 
-Then set `CORS_ORIGINS` to the Vercel frontend origin and set Vercel's `VITE_API_URL` to `https://<backend-app-name>.herokuapp.com/api/wind-analysis`:
+Then set `CORS_ORIGINS` to the Vercel frontend origin and set Vercel's `VITE_API_URL` to `https://<backend-app-name>.herokuapp.com/api`:
 
 ```bash
 heroku config:set CORS_ORIGINS=https://<your-frontend>.vercel.app -a <backend-app-name>

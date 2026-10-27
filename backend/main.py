@@ -42,6 +42,7 @@ You are provided with real-time context of the dashboard's current state.
 
 CRITICAL DOMAIN KNOWLEDGE:
 - 'MAE' (Mean Absolute Error): The average volume risk in MW.
+- 'RMSE' (Root Mean Squared Error): Like MAE but penalizes larger misses more heavily, in MW.
 - 'MAPE': The mean absolute percentage error.
 - 'Forecast Bias': Indicates directional error. A positive value means Elexon over-forecasted (the actual wind fell short). A negative value means they under-forecasted.
 - 'Shortfalls': Specific delivery intervals where actual generation significantly missed the forecast, posing severe system imbalance risks.
@@ -272,6 +273,7 @@ def analyse_wind(actual_records, forecast_records, start_date, end_date):
     return {
         "metrics": {
             "mae": float(error.mean()),
+            "rmse": float((error ** 2).mean() ** 0.5),
             "mape": float((error[nonzero] / merged.loc[nonzero, "generation_actual"].abs()).mean() * 100)
             if nonzero.any()
             else 0.0,
