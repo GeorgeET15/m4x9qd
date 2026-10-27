@@ -88,7 +88,7 @@ a:focus:not(:focus-visible) {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 32px;
+  padding: 0 32px 32px;
   margin: 0 auto;
   scrollbar-color: #cbd5e1 #f8fafc;
   scrollbar-width: thin;
@@ -1370,7 +1370,7 @@ a:focus:not(:focus-visible) {
 
 @media (max-width: 1050px) {
   .dashboard {
-    padding: 22px;
+    padding: 0 22px 22px;
   }
 
   .dashboard.assistant-is-open .metrics-strip {
@@ -1429,7 +1429,7 @@ a:focus:not(:focus-visible) {
 
 @media (max-width: 520px) {
   .dashboard {
-    padding: 12px 12px 20px;
+    padding: 0 12px 20px;
   }
 
   .topbar {
