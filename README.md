@@ -20,6 +20,7 @@ The selection rule is explicit: for each delivery `startTime`, select the latest
 
 ```text
 .
+├── .dockerignore          # Exclude local files from the Heroku Docker context
 ├── backend/
 │   ├── .dockerignore       # Keep local environments out of the image
 │   ├── Dockerfile          # FastAPI container
@@ -45,6 +46,7 @@ The selection rule is explicit: for each delivery `startTime`, select the latest
 │       ├── main.jsx        # React entry point
 │       └── assets/         # Static image and starter assets
 ├── docker-compose.yml      # Runs the full application locally
+├── Dockerfile.heroku       # Heroku backend image, built from the repo root
 ├── .gitignore              # Excludes local environments, builds and secrets
 └── heroku.yml              # Heroku container definition for the backend
 ```
@@ -113,6 +115,21 @@ npm run build
 The frontend is configured for Vercel (`frontend/` as the project root). Set `VITE_API_URL` to the deployed backend's `/api/wind-analysis` URL in the Vercel project settings.
 
 The backend has a Dockerfile and `heroku.yml`. Configure `CORS_ORIGINS` on the backend to the exact deployed frontend origin (comma-separated if multiple origins are needed). The current default `*` is convenient for local pilot use and should be replaced for deployment.
+
+For a Heroku backend, create an app, select the container stack, add its Git remote, and push the `main` branch:
+
+```bash
+heroku create <backend-app-name>
+heroku stack:set container -a <backend-app-name>
+heroku git:remote -a <backend-app-name>
+git push heroku main
+```
+
+Then set `CORS_ORIGINS` to the Vercel frontend origin and set Vercel's `VITE_API_URL` to `https://<backend-app-name>.herokuapp.com/api/wind-analysis`:
+
+```bash
+heroku config:set CORS_ORIGINS=https://<your-frontend>.vercel.app -a <backend-app-name>
+```
 
 **No public deployment URL is available yet.** Deployment requires access to the client's or submitter's hosting accounts; this workspace contains deploy configuration but cannot create or authorize those accounts.
 
