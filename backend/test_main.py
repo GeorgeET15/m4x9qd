@@ -256,7 +256,7 @@ class WindAnalysisTests(unittest.TestCase):
             analyse_wind([], [], date(2026, 1, 1), date(2026, 1, 1))
         self.assertEqual(error.exception.status_code, 404)
 
-    def test_partial_forecast_coverage_is_reported_against_actuals(self):
+    def test_hourly_forecast_covers_both_half_hourly_periods(self):
         actual = [
             {"fuelType": "WIND", "startTime": "2026-01-02T12:00:00Z",
              "publishTime": "2026-01-02T12:30:00Z", "generation": 100},
@@ -265,6 +265,24 @@ class WindAnalysisTests(unittest.TestCase):
         ]
         forecasts = [
             {"startTime": "2026-01-02T12:00:00Z", "publishTime": "2026-01-01T10:00:00Z",
+             "generation": 90},
+        ]
+
+        result = analyse_wind(actual, forecasts, date(2026, 1, 2), date(2026, 1, 2))
+
+        self.assertEqual(result["metadata"]["actual_points"], 2)
+        self.assertEqual(result["metadata"]["matched_points"], 2)
+        self.assertEqual(result["metadata"]["coverage_pct"], 100.0)
+
+    def test_partial_forecast_coverage_is_reported_against_actuals(self):
+        actual = [
+            {"fuelType": "WIND", "startTime": "2026-01-02T12:30:00Z",
+             "publishTime": "2026-01-02T13:00:00Z", "generation": 110},
+            {"fuelType": "WIND", "startTime": "2026-01-02T13:30:00Z",
+             "publishTime": "2026-01-02T14:00:00Z", "generation": 120},
+        ]
+        forecasts = [
+            {"startTime": "2026-01-02T13:00:00Z", "publishTime": "2026-01-01T10:00:00Z",
              "generation": 90},
         ]
 

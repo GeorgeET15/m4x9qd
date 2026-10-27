@@ -231,27 +231,29 @@ def analyse_wind(actual_records, forecast_records, start_date, end_date):
     actual = actual.loc[actual["startTime"].dt.tz_convert(UK_TIMEZONE).dt.date.between(start_date, end_date)]
     actual = actual.dropna(subset=["startTime", "generation"])
     actual = actual.sort_values("publishTime").drop_duplicates("startTime", keep="last")
+    actual["delivery_hour"] = actual["startTime"].dt.floor("h")
 
     forecast["startTime"] = pd.to_datetime(forecast["startTime"], utc=True)
     forecast["publishTime"] = pd.to_datetime(forecast["publishTime"], utc=True)
     forecast["generation"] = pd.to_numeric(forecast["generation"], errors="coerce")
     forecast = forecast.dropna(subset=["startTime", "publishTime", "generation"])
-    local_delivery = forecast["startTime"].dt.tz_convert(UK_TIMEZONE).dt.tz_localize(None)
+    forecast["delivery_hour"] = forecast["startTime"].dt.floor("h")
+    local_delivery = forecast["delivery_hour"].dt.tz_convert(UK_TIMEZONE).dt.tz_localize(None)
     forecast["da_deadline"] = (
         local_delivery.dt.normalize() - pd.Timedelta(days=1) + pd.Timedelta(hours=11)
     ).dt.tz_localize(UK_TIMEZONE).dt.tz_convert("UTC")
     forecast = forecast.loc[forecast["publishTime"] <= forecast["da_deadline"]]
-    forecast = forecast.sort_values("publishTime").drop_duplicates("startTime", keep="last")
+    forecast = forecast.sort_values("publishTime").drop_duplicates("delivery_hour", keep="last")
 
     actual_point_count = len(actual)
-    merged = actual.merge(forecast, on="startTime", suffixes=("_actual", "_forecast"))
+    merged = actual.merge(forecast, on="delivery_hour", suffixes=("_actual", "_forecast"))
     if merged.empty:
         raise HTTPException(
             status_code=404,
             detail="No actual generation intervals have an eligible Day-Ahead forecast",
         )
 
-    merged = merged.sort_values("startTime")
+    merged = merged.sort_values("startTime_actual")
     error = (merged["generation_actual"] - merged["generation_forecast"]).abs()
     nonzero = merged["generation_actual"] != 0
     latest_publish_time = merged["publishTime_forecast"].max()
@@ -289,7 +291,7 @@ def analyse_wind(actual_records, forecast_records, start_date, end_date):
         },
         "chart_data": [
             {
-                "startTime": row.startTime.isoformat().replace("+00:00", "Z"),
+                "startTime": row.startTime_actual.isoformat().replace("+00:00", "Z"),
                 "actual_generation": float(row.generation_actual),
                 "forecast_generation": float(row.generation_forecast),
                 "forecast_publish_time": row.publishTime_forecast.isoformat().replace("+00:00", "Z"),
@@ -298,7 +300,7 @@ def analyse_wind(actual_records, forecast_records, start_date, end_date):
         ],
         "shortfalls": [
             {
-                "delivery_time": row.startTime.isoformat().replace("+00:00", "Z"),
+                "delivery_time": row.startTime_actual.isoformat().replace("+00:00", "Z"),
                 "forecast_publish_time": row.publishTime_forecast.isoformat().replace("+00:00", "Z"),
                 "outturn": float(row.generation_actual),
                 "forecast": float(row.generation_forecast),
