@@ -49,9 +49,11 @@ The optional `POST /api/ask-assistant` endpoint uses Google Gemini (`gemini-2.5-
 │       ├── main.jsx        # React entry point
 │       └── assets/         # Static image and starter assets
 ├── docker-compose.yml      # Runs the full application locally
+├── start.sh                # One-command Docker Compose start script
 ├── Dockerfile.heroku       # Heroku backend image, built from the repo root
 ├── .gitignore              # Excludes local environments, builds and secrets
-└── heroku.yml              # Heroku container definition for the backend
+├── heroku.yml              # Heroku container definition for the backend
+└── VIDEO_SCRIPT.md         # Timed, word-for-word demo recording script
 ```
 
 ## Run locally
@@ -165,11 +167,11 @@ heroku config:set CORS_ORIGINS=https://<your-frontend>.vercel.app -a <backend-ap
 
 ## Demo run-of-show
 
-The requested unlisted YouTube recording still needs to be recorded and uploaded by an account owner. A concise, under-10-minute walkthrough can use this split:
+The requested unlisted YouTube recording still needs to be recorded and uploaded by an account owner. [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) contains a fully timed, word-for-word script for both parts (client pitch and technical review) plus a recording checklist. In short:
 
 1. **Client pitch (about 4 minutes):** frame the D-1 wind volume risk; show MAE, MAPE, bias and match coverage; compare forecast with outturn; inspect the largest forecast shortfalls and their issue times; close by explaining that the pilot uses historical national wind only and does not recommend a trade.
-2. **Technical review (about 4 minutes):** trace the React dashboard through the FastAPI endpoint to Elexon `FUELHH` and `WINDFOR`; explain the cutoff filtering and exact-time matching; explain metrics and known coverage limitation; show the unit tests and run the Docker Compose setup.
+2. **Technical review (about 4 minutes):** trace the React dashboard through the FastAPI endpoint to Elexon `FUELHH` and `WINDFOR`; explain the cutoff filtering and delivery-hour matching; explain metrics and coverage; show the unit tests and run the Docker Compose setup.
 
 ## AI tools
 
-An AI assistant using Copilot SDK in VS Code assisted with implementation and documentation. Impeccable design guidance and its UI detector informed the dashboard redesign; IBM Plex Sans is self-hosted through Fontsource rather than fetched at runtime. The data-selection logic and its tests were reviewed and run as part of development.
+AI tools assisted with implementation and documentation, including GitHub Copilot in VS Code and [Devin](https://devin.ai) (data-matching fix, verification, and the demo video script). Impeccable design guidance and its UI detector informed the dashboard redesign; IBM Plex Sans is self-hosted through Fontsource rather than fetched at runtime. The data-selection logic and its tests were reviewed and run as part of development.
