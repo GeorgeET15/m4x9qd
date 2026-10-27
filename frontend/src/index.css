@@ -95,7 +95,7 @@ a:focus:not(:focus-visible) {
 }
 
 .topbar {
-  min-height: 52px;
+  min-height: 62px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -110,8 +110,8 @@ a:focus:not(:focus-visible) {
 }
 
 .brand-star {
-  width: 14px;
-  height: 14px;
+  width: 17px;
+  height: 17px;
   align-self: center;
   display: grid;
   place-items: center;
@@ -126,35 +126,35 @@ a:focus:not(:focus-visible) {
 
 .brand-name {
   color: var(--ink);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 650;
   letter-spacing: -0.4px;
 }
 
 .brand-context {
   margin-left: 2px;
-  padding-left: 10px;
+  padding-left: 11px;
   border-left: 1px solid #cbd5e1;
   color: var(--subtle);
-  font-size: 12px;
+  font-size: 13.5px;
 }
 
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .topbar-source {
   margin-right: 4px;
   color: var(--subtle);
-  font-size: 11px;
+  font-size: 12.5px;
   white-space: nowrap;
 }
 
 .icon-button {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
   padding: 0;
@@ -176,17 +176,17 @@ a:focus:not(:focus-visible) {
 }
 
 .assistant-button {
-  min-height: 32px;
+  min-height: 37px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 0 12px;
+  padding: 0 15px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--teal);
   color: #fff;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 600;
   white-space: nowrap;
   transition: background 140ms ease;
@@ -271,7 +271,7 @@ a:focus:not(:focus-visible) {
   align-items: flex-end;
   justify-content: space-between;
   gap: 28px;
-  padding: 26px 0 22px;
+  padding: 32px 0 26px;
 }
 
 .page-heading > div:first-child {
@@ -281,7 +281,7 @@ a:focus:not(:focus-visible) {
 .page-heading h1 {
   margin: 0;
   color: var(--ink);
-  font-size: 27px;
+  font-size: 34px;
   font-weight: 650;
   letter-spacing: -0.9px;
   line-height: 1.15;
@@ -290,9 +290,9 @@ a:focus:not(:focus-visible) {
 
 .page-subtitle {
   max-width: 65ch;
-  margin: 7px 0 0;
+  margin: 9px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
   text-wrap: pretty;
 }
@@ -307,13 +307,13 @@ a:focus:not(:focus-visible) {
 
 .period-panel time {
   color: var(--ink);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 650;
 }
 
 .period-meta {
   color: var(--subtle);
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 .metrics-strip {
@@ -324,8 +324,8 @@ a:focus:not(:focus-visible) {
 
 .metric-card {
   min-width: 0;
-  min-height: 103px;
-  padding: 12px 14px 11px;
+  min-height: 126px;
+  padding: 16px 18px 15px;
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--panel);
@@ -334,15 +334,15 @@ a:focus:not(:focus-visible) {
 .metric-label {
   margin: 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
 }
 
 .metric-value {
-  margin: 7px 0 0;
+  margin: 10px 0 0;
   color: var(--ink);
-  font-size: 23px;
+  font-size: 30px;
   font-weight: 680;
   letter-spacing: -0.7px;
   line-height: 1;
@@ -353,17 +353,17 @@ a:focus:not(:focus-visible) {
 }
 
 .metric-value span {
-  margin-left: 4px;
+  margin-left: 5px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 550;
   letter-spacing: 0;
 }
 
 .metric-detail {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.35;
   text-wrap: pretty;
 }
@@ -385,7 +385,7 @@ a:focus:not(:focus-visible) {
 
 .chart-panel,
 .watchlist-panel {
-  padding: 15px 15px 12px;
+  padding: 19px 19px 15px;
 }
 
 .panel-heading {
@@ -398,25 +398,25 @@ a:focus:not(:focus-visible) {
 .panel-heading h2 {
   margin: 0;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 16.5px;
   font-weight: 650;
   letter-spacing: -0.2px;
 }
 
 .panel-description {
-  margin: 3px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.4;
 }
 
 .unit-tag {
-  padding: 3px 6px;
+  padding: 4px 7px;
   border: 1px solid var(--line);
   border-radius: 3px;
   background: #f8fafc;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.5px;
   white-space: nowrap;
@@ -425,10 +425,10 @@ a:focus:not(:focus-visible) {
 .chart-legend {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 13px;
+  gap: 18px;
+  margin-top: 15px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .chart-legend > span {
@@ -453,26 +453,26 @@ a:focus:not(:focus-visible) {
 }
 
 .chart-wrap {
-  height: 274px;
+  height: 360px;
   margin: 4px -6px 0 -7px;
 }
 
 .chart-tooltip {
-  min-width: 170px;
-  padding: 9px 10px;
+  min-width: 190px;
+  padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--panel);
   box-shadow: 0 5px 16px #0f172a1a;
   color: var(--ink);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .chart-tooltip > strong {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
   color: var(--ink);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .chart-tooltip p {
@@ -493,17 +493,17 @@ a:focus:not(:focus-visible) {
   padding-top: 6px;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .chart-footnote {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 0 0;
+  padding: 10px 0 0;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .chart-footnote strong {
@@ -512,12 +512,12 @@ a:focus:not(:focus-visible) {
 }
 
 .risk-tag {
-  padding: 3px 5px;
+  padding: 4px 7px;
   border: 1px solid var(--warning-line);
   border-radius: 3px;
   background: var(--warning-surface);
   color: var(--warning-ink);
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.45px;
   white-space: nowrap;
@@ -538,9 +538,9 @@ a:focus:not(:focus-visible) {
 }
 
 .watchlist-table-wrap th {
-  padding: 0 5px 8px;
+  padding: 0 6px 9px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.35px;
 }
@@ -551,10 +551,10 @@ a:focus:not(:focus-visible) {
 }
 
 .watchlist-table-wrap td {
-  padding: 8px 5px;
+  padding: 10px 6px;
   border-top: 1px solid #f1f5f9;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12.5px;
 }
 
 .watchlist-table-wrap td:first-child strong,
@@ -564,14 +564,14 @@ a:focus:not(:focus-visible) {
 
 .watchlist-table-wrap td:first-child strong {
   color: var(--ink);
-  font-size: 10px;
+  font-size: 12.5px;
   font-weight: 600;
 }
 
 .watchlist-table-wrap td:first-child small {
-  margin-top: 2px;
+  margin-top: 3px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .watchlist-table-wrap .shortfall {
@@ -580,11 +580,11 @@ a:focus:not(:focus-visible) {
 }
 
 .watchlist-note {
-  margin: 10px 0 0;
-  padding-top: 8px;
+  margin: 12px 0 0;
+  padding-top: 10px;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.45;
   text-wrap: pretty;
 }
@@ -595,21 +595,21 @@ a:focus:not(:focus-visible) {
   min-height: 190px;
   place-items: center;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
   text-align: center;
 }
 
 .empty-chart {
-  min-height: 274px;
+  min-height: 360px;
 }
 
 .method-strip {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   margin-top: 10px;
-  padding: 11px 13px;
+  padding: 14px 16px;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
   background: #f1f5f9;
@@ -618,15 +618,15 @@ a:focus:not(:focus-visible) {
 .method-strip h2 {
   margin: 0;
   color: var(--ink);
-  font-size: 10px;
+  font-size: 12.5px;
   font-weight: 650;
 }
 
 .method-strip p {
   max-width: 72ch;
-  margin: 3px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
   text-wrap: pretty;
 }
@@ -638,9 +638,9 @@ a:focus:not(:focus-visible) {
 .method-strip a {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   color: #0f5f59;
-  font-size: 10px;
+  font-size: 12.5px;
   font-weight: 650;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -652,17 +652,17 @@ a:focus:not(:focus-visible) {
 }
 
 .method-strip svg {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
 }
 
 .page-footer {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 11px 1px 0;
+  padding: 14px 1px 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .loading-panel {
@@ -676,7 +676,7 @@ a:focus:not(:focus-visible) {
 .loading-panel > p {
   margin: 0 0 12px;
   color: var(--ink);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .loading-skeleton {
@@ -686,7 +686,7 @@ a:focus:not(:focus-visible) {
 }
 
 .loading-skeleton span {
-  height: 64px;
+  height: 110px;
   border: 1px solid var(--line);
   border-radius: 3px;
   background:
@@ -720,7 +720,7 @@ a:focus:not(:focus-visible) {
   justify-content: center;
   gap: 10px;
   color: var(--ink);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .error-panel {
@@ -851,7 +851,7 @@ a:focus:not(:focus-visible) {
 .assistant-header h2 {
   margin: 0;
   color: var(--ink);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.1px;
 }
@@ -916,7 +916,7 @@ a:focus:not(:focus-visible) {
 .assistant-welcome h3 {
   margin: 12px 0 4px;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 650;
   letter-spacing: -0.2px;
 }
@@ -924,7 +924,7 @@ a:focus:not(:focus-visible) {
 .assistant-welcome > p {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -948,7 +948,7 @@ a:focus:not(:focus-visible) {
   color: #334155;
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.4;
   text-align: left;
   transition:
@@ -957,8 +957,8 @@ a:focus:not(:focus-visible) {
 }
 
 .assistant-suggestion-icon {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -1002,13 +1002,13 @@ a:focus:not(:focus-visible) {
 .assistant-data-empty h3 {
   margin: 12px 0 4px;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .assistant-data-empty p {
   margin: 4px 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
@@ -1026,7 +1026,7 @@ a:focus:not(:focus-visible) {
   border-radius: 12px 12px 3px 12px;
   background: #f1f5f9;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -1054,7 +1054,7 @@ a:focus:not(:focus-visible) {
 
 .assistant-answer {
   color: var(--ink);
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -1071,7 +1071,7 @@ a:focus:not(:focus-visible) {
 
 .assistant-answer-heading {
   color: var(--ink);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 650;
   line-height: 1.4;
 }
@@ -1120,7 +1120,7 @@ a:focus:not(:focus-visible) {
 .assistant-answer-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -1134,7 +1134,7 @@ a:focus:not(:focus-visible) {
 .assistant-answer-table th {
   background: #f8fafc;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -1157,7 +1157,7 @@ a:focus:not(:focus-visible) {
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .assistant-error {
@@ -1171,7 +1171,7 @@ a:focus:not(:focus-visible) {
   border-radius: 8px;
   background: #fff1f2;
   color: #9f1239;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -1231,7 +1231,7 @@ a:focus:not(:focus-visible) {
   background: #fff;
   color: #335e5a;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.35;
   text-align: left;
 }
@@ -1278,7 +1278,7 @@ a:focus:not(:focus-visible) {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   padding: 4px 0;
   resize: none;
@@ -1300,8 +1300,8 @@ a:focus:not(:focus-visible) {
 }
 
 .assistant-send {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -1342,7 +1342,7 @@ a:focus:not(:focus-visible) {
 .assistant-disclaimer {
   margin: 7px 0 0;
   color: #94a3b8;
-  font-size: 10px;
+  font-size: 10.5px;
   line-height: 1.4;
   text-align: center;
 }
@@ -1471,29 +1471,29 @@ a:focus:not(:focus-visible) {
   }
 
   .page-heading h1 {
-    font-size: 24px;
+    font-size: 28px;
     letter-spacing: -0.75px;
   }
 
   .page-subtitle {
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .metric-card {
-    min-height: 96px;
-    padding: 10px 9px;
+    min-height: 110px;
+    padding: 13px 12px;
   }
 
   .metric-label {
-    font-size: 10px;
+    font-size: 11.5px;
   }
 
   .metric-value {
-    font-size: 20px;
+    font-size: 24px;
   }
 
   .metric-detail {
-    font-size: 10px;
+    font-size: 11.5px;
   }
 
   .chart-panel,
@@ -1502,7 +1502,7 @@ a:focus:not(:focus-visible) {
   }
 
   .chart-wrap {
-    height: 228px;
+    height: 260px;
   }
 
   .chart-footnote {

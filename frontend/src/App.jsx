@@ -733,14 +733,14 @@ function App() {
                           tickFormatter={(value) =>
                             formatUKTime(value, { day: '2-digit', month: 'short' })
                           }
-                          tick={{ fill: '#64748b', fontSize: 10 }}
+                          tick={{ fill: '#64748b', fontSize: 12 }}
                           tickLine={false}
                           axisLine={false}
                         />
                         <YAxis
-                          width={48}
+                          width={56}
                           tickFormatter={formatNumber}
-                          tick={{ fill: '#64748b', fontSize: 10 }}
+                          tick={{ fill: '#64748b', fontSize: 12 }}
                           tickLine={false}
                           axisLine={false}
                         />
