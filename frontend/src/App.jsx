@@ -111,16 +111,6 @@ function MetricReadout({ label, value, unit, detail, isPrimary = false }) {
   )
 }
 
-function AssistantMetric({ label, value, detail, tone = 'neutral' }) {
-  return (
-    <div className={`assistant-metric assistant-metric-${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{detail}</small>
-    </div>
-  )
-}
-
 function RefreshIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -186,14 +176,6 @@ function SendIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
       <path d="M3.5 10h12M10 4.5l5.5 5.5-5.5 5.5" />
-    </svg>
-  )
-}
-
-function ArrowUpRightIcon() {
-  return (
-    <svg viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M4.5 11.5 11 5m-5.5 0H11v5.5" />
     </svg>
   )
 }
@@ -594,45 +576,6 @@ function App() {
     Number.isFinite(matched) && Number.isFinite(expected) && expected > 0
       ? Math.round((matched / expected) * 100)
       : null
-  const bias = metrics?.bias
-  const assistantMetricItems = [
-    {
-      label: 'Mean absolute error',
-      value: Number.isFinite(metrics?.mae) ? `${formatMetric(metrics.mae)} MW` : '—',
-      detail: 'Average absolute error',
-      tone: 'teal',
-    },
-    {
-      label: 'Mean absolute percentage error',
-      value: Number.isFinite(metrics?.mape) ? `${formatMetric(metrics.mape)}%` : '—',
-      detail: `${formatNumber(metadata?.mape_sample_count)} non-zero actuals`,
-      tone: 'neutral',
-    },
-    {
-      label: 'Forecast bias',
-      value: Number.isFinite(bias)
-        ? `${bias > 0 ? '+' : ''}${formatMetric(bias)} MW`
-        : '—',
-      detail: Number.isFinite(bias)
-        ? bias > 0
-          ? 'Over-forecast'
-          : bias < 0
-            ? 'Under-forecast'
-            : 'No directional bias'
-        : 'Awaiting matched data',
-      tone: Number.isFinite(bias) ? (bias > 0 ? 'amber' : bias < 0 ? 'blue' : 'neutral') : 'neutral',
-    },
-    {
-      label: 'Matched coverage',
-      value: Number.isFinite(matched) && Number.isFinite(expected) ? coverage : '—',
-      detail:
-        coveragePercent !== null
-          ? `${coveragePercent}% of expected periods`
-          : 'Coverage unavailable',
-      tone: 'neutral',
-    },
-  ]
-
   return (
     <main className="app-shell flex h-screen overflow-hidden bg-slate-50 font-sans">
       <div
@@ -949,25 +892,18 @@ function App() {
       </div>
       <aside
         id="assistant-panel"
-        className={`assistant-sidebar w-96 flex-shrink-0 bg-slate-100 border-l border-slate-300 flex flex-col h-full${assistantOpen ? ' is-open' : ''}`}
+        className={`assistant-sidebar${assistantOpen ? ' is-open' : ''}`}
         aria-label="Dashboard assistant"
         aria-hidden={!assistantOpen}
         aria-labelledby="assistant-title"
         inert={!assistantOpen}
       >
-        <div className="assistant-header p-4 border-b border-slate-200 flex justify-between items-center">
+        <div className="assistant-header">
           <div className="assistant-header-content">
             <span className="assistant-header-mark" aria-hidden="true">
               <AssistantSparkleIcon />
             </span>
-            <div className="assistant-header-copy">
-              <h2 id="assistant-title">Dashboard Assistant</h2>
-              <p>January 2026 · Great Britain</p>
-              <span className="assistant-context-status">
-                <i aria-hidden="true" />
-                Using current dashboard data
-              </span>
-            </div>
+            <h2 id="assistant-title">Northstar Assistant</h2>
           </div>
           <button
             className="assistant-close"
@@ -982,89 +918,67 @@ function App() {
           </button>
         </div>
 
-        <div
-          className="assistant-log flex-1 overflow-y-auto p-5 space-y-6"
-          role="log"
-          aria-live="polite"
-        >
+        <div className="assistant-log" role="log" aria-live="polite">
           {assistantMessages.length === 0 ? (
-            <div className="assistant-welcome">
-              {metrics ? (
-                <>
-                  <div className="assistant-welcome-heading">
-                    <span>WIND FORECAST ANALYSIS</span>
-                    <h3>What would you like to investigate?</h3>
-                    <p>
-                      Answers are grounded in the January dashboard data. Market
-                      prices and dispatch recommendations are not available.
-                    </p>
-                  </div>
-                  <div className="assistant-metrics">
-                    {assistantMetricItems.map((item) => (
-                      <AssistantMetric key={item.label} {...item} />
-                    ))}
-                  </div>
-                  <div className="assistant-examples">
-                    <div className="assistant-section-heading">
-                      <h3>Suggested investigations</h3>
-                      <span>SELECT TO RUN</span>
-                    </div>
-                    {ASSISTANT_SUGGESTIONS.map(({ icon, question }) => (
-                  <button
-                    className="assistant-example"
-                    key={question}
-                    type="button"
-                    disabled={assistantLoading}
-                    onClick={() => askAssistant(question)}
-                  >
-                    <span className="assistant-example-icon" aria-hidden="true">
-                      <AssistantSuggestionIcon kind={icon} />
-                    </span>
-                    <span className="assistant-example-copy">{question}</span>
-                    <span className="assistant-example-arrow" aria-hidden="true">
-                      <ArrowUpRightIcon />
-                    </span>
-                  </button>
-                ))}
-                  </div>
-                </>
-              ) : (
-                <div className="assistant-data-empty" role="status">
-                  <span className="assistant-data-empty-mark" aria-hidden="true">
-                    <WarningIcon />
-                  </span>
-                  <h3>Dashboard data unavailable</h3>
-                  <p>
-                    {loading
-                      ? 'Waiting for the January wind analysis to load.'
-                      : error || 'Refresh the dashboard to load current metrics.'}
-                  </p>
-                  <p>Questions require loaded forecast and outturn data.</p>
+            metrics ? (
+              <div className="assistant-welcome">
+                <span className="assistant-welcome-mark" aria-hidden="true">
+                  <AssistantSparkleIcon />
+                </span>
+                <h3>Ask about the January forecast</h3>
+                <p>
+                  Answers are grounded in the dashboard&apos;s January 2026 data.
+                </p>
+                <div className="assistant-suggestions">
+                  {ASSISTANT_SUGGESTIONS.map(({ icon, question }) => (
+                    <button
+                      className="assistant-suggestion"
+                      key={question}
+                      type="button"
+                      disabled={assistantLoading}
+                      onClick={() => askAssistant(question)}
+                    >
+                      <span className="assistant-suggestion-icon" aria-hidden="true">
+                        <AssistantSuggestionIcon kind={icon} />
+                      </span>
+                      {question}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="assistant-data-empty" role="status">
+                <span className="assistant-data-empty-mark" aria-hidden="true">
+                  <WarningIcon />
+                </span>
+                <h3>Dashboard data unavailable</h3>
+                <p>
+                  {loading
+                    ? 'Waiting for the January wind analysis to load.'
+                    : error || 'Refresh the dashboard to load current metrics.'}
+                </p>
+              </div>
+            )
           ) : (
             assistantMessages.map((message, messageIndex) => (
               <article className="assistant-entry" key={message.id}>
-                <div className="assistant-query font-mono text-xs text-slate-800">
-                  <span className="font-bold mr-2" aria-hidden="true">&gt;</span>
-                  {message.question}
-                </div>
+                <div className="assistant-query">{message.question}</div>
                 {(message.answer || assistantRequestId === message.id) && (
-                  <div className="assistant-response-block">
-                    <div className="assistant-response-label">
-                      <span className="assistant-response-mark" aria-hidden="true">
-                        <AssistantSparkleIcon />
-                      </span>
-                      NORTHSTAR ANALYSIS
+                  <div className="assistant-response">
+                    <span className="assistant-response-mark" aria-hidden="true">
+                      <AssistantSparkleIcon />
+                    </span>
+                    <div className="assistant-response-body">
+                      {message.answer && (
+                        <AssistantAnswer text={message.answer} />
+                      )}
+                      {assistantRequestId === message.id && !message.answer && (
+                        <div className="assistant-loading" role="status">
+                          <LoadingIcon />
+                          Thinking…
+                        </div>
+                      )}
                     </div>
-                    {message.answer && <AssistantAnswer text={message.answer} />}
-                    {assistantRequestId === message.id && (
-                      <div className="assistant-loading" role="status">
-                        <LoadingIcon />
-                        Generating data-grounded response...
-                      </div>
-                    )}
                   </div>
                 )}
                 {message.error && (
@@ -1076,7 +990,7 @@ function App() {
                       onClick={() => askAssistant(message.question, message.id)}
                       disabled={assistantLoading}
                     >
-                      Retry request
+                      Retry
                     </button>
                   </div>
                 )}
@@ -1084,8 +998,10 @@ function App() {
                   !message.error &&
                   messageIndex === assistantMessages.length - 1 &&
                   !assistantLoading && (
-                    <div className="assistant-followups" aria-label="Suggested follow-up questions">
-                      <span>CONTINUE ANALYSIS</span>
+                    <div
+                      className="assistant-followups"
+                      aria-label="Suggested follow-up questions"
+                    >
                       {[
                         'How do MAE and MAPE differ here?',
                         'What do the largest shortfalls show?',
@@ -1106,7 +1022,7 @@ function App() {
           )}
         </div>
 
-        <div className="assistant-input-area p-4 border-t border-slate-300 bg-slate-50">
+        <div className="assistant-input-area">
           <form onSubmit={submitAssistantQuestion}>
             <div className="assistant-composer">
               <textarea
@@ -1117,7 +1033,7 @@ function App() {
                 value={assistantQuestion}
                 onChange={(event) => setAssistantQuestion(event.target.value)}
                 onKeyDown={handleAssistantInputKeyDown}
-                placeholder="Ask about forecast accuracy..."
+                placeholder="Ask about the forecast…"
                 maxLength={2000}
                 disabled={!metrics || assistantLoading}
                 aria-label="Ask about forecast accuracy"
@@ -1134,8 +1050,7 @@ function App() {
             </div>
           </form>
           <p className="assistant-disclaimer">
-            Enter to send · Shift + Enter for a new line
-            <span>Answers use current dashboard data.</span>
+            Grounded in current dashboard data
           </p>
         </div>
       </aside>
