@@ -40,19 +40,59 @@ function formatUKTime(value, options = {}) {
   })
 }
 
-function MetricCard({ label, value, unit, detail, accent }) {
+function validateAnalysisPayload(data) {
+  const hasMetrics =
+    Number.isFinite(data?.metrics?.mae) &&
+    Number.isFinite(data?.metrics?.mape) &&
+    Number.isFinite(data?.metrics?.bias)
+  const hasCoverage =
+    Number.isFinite(data?.metadata?.matched_points) &&
+    Number.isFinite(data?.metadata?.actual_points) &&
+    Number.isFinite(data?.metadata?.coverage_pct)
+
+  if (!hasMetrics || !hasCoverage || !Array.isArray(data?.chart_data)) {
+    throw new Error(
+      'The backend response is missing bias or coverage data. Rebuild and restart the backend to load the updated API.',
+    )
+  }
+  return data
+}
+
+function getAnalysisErrorMessage(error) {
+  if (error.response?.data?.detail) return error.response.data.detail
+  if (error.message?.startsWith('The backend response is missing')) return error.message
+  return 'The wind analysis service is unavailable. Check the backend connection and try again.'
+}
+
+function MetricReadout({ label, value, unit, detail, className = '' }) {
   return (
-    <article className="metric-card">
-      <div className="metric-heading">
-        <span className={`metric-dot ${accent}`} aria-hidden="true" />
-        <h2>{label}</h2>
-      </div>
+    <div className={`metric-readout ${className}`}>
+      <p className="metric-label">{label}</p>
       <p className="metric-value">
         {value}
-        <span>{unit}</span>
+        {unit && <span>{unit}</span>}
       </p>
       <p className="metric-detail">{detail}</p>
-    </article>
+    </div>
+  )
+}
+
+function RefreshIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M16.2 8a6.4 6.4 0 0 0-11.1-2L3.5 7.5" />
+      <path d="M3.5 3.8v3.7h3.7M3.8 12a6.4 6.4 0 0 0 11.1 2l1.6-1.5" />
+      <path d="M16.5 16.2v-3.7h-3.7" />
+    </svg>
+  )
+}
+
+function ExternalLinkIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M9 2.5h4.5V7M13.2 2.8 7.5 8.5" />
+      <path d="M12 9v3.5a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1H7" />
+    </svg>
   )
 }
 
@@ -104,16 +144,14 @@ function App() {
       const response = await axios.get(API_URL, {
         params: REQUEST_PARAMS,
       })
-      setChartData(response.data.chart_data)
-      setMetrics(response.data.metrics)
-      setMetadata(response.data.metadata)
+      const data = validateAnalysisPayload(response.data)
+      setChartData(data.chart_data)
+      setMetrics(data.metrics)
+      setMetadata(data.metadata)
       setError(null)
       setLastUpdated(new Date())
     } catch (requestError) {
-      setError(
-        requestError.response?.data?.detail ||
-          'The wind analysis service is unavailable. Check the backend connection and try again.',
-      )
+      setError(getAnalysisErrorMessage(requestError))
     } finally {
       setLoading(false)
     }
@@ -125,18 +163,16 @@ function App() {
       .get(API_URL, { params: REQUEST_PARAMS })
       .then((response) => {
         if (!active) return
-        setChartData(response.data.chart_data)
-        setMetrics(response.data.metrics)
-        setMetadata(response.data.metadata)
+        const data = validateAnalysisPayload(response.data)
+        setChartData(data.chart_data)
+        setMetrics(data.metrics)
+        setMetadata(data.metadata)
         setError(null)
         setLastUpdated(new Date())
       })
       .catch((requestError) => {
         if (!active) return
-        setError(
-          requestError.response?.data?.detail ||
-            'The wind analysis service is unavailable. Check the backend connection and try again.',
-        )
+        setError(getAnalysisErrorMessage(requestError))
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -198,7 +234,9 @@ function App() {
               disabled={loading}
               type="button"
             >
-              <span aria-hidden="true">{loading ? '…' : '↻'}</span>
+              <span className={loading ? 'refresh-icon is-loading' : 'refresh-icon'}>
+                <RefreshIcon />
+              </span>
               {loading ? 'Updating' : 'Refresh data'}
             </button>
           </div>
@@ -206,28 +244,28 @@ function App() {
 
         <section className="hero">
           <div>
-            <p className="eyebrow">NATIONAL WIND · DAY-AHEAD DESK</p>
-            <h1>Make the wind call<br />with confidence.</h1>
+            <h1>Wind forecast accuracy</h1>
             <p className="hero-copy">
-              See the forecast the desk could have used at decision time — and
-              how closely it tracked the outturn.
+              A decision-time view of Elexon’s national wind forecast against
+              realised generation.
             </p>
           </div>
           <div className="period-panel">
-            <span className="period-label">REVIEW PERIOD</span>
-            <strong>01 — 31 January 2026</strong>
-            <span className="period-meta">Great Britain · 30-minute actuals</span>
-            <span className="period-status">
-              <span aria-hidden="true" />
-              HISTORICAL ANALYSIS
-            </span>
+            <span className="period-label">Delivery window</span>
+            <time dateTime="2026-01">01—31 Jan 2026</time>
+            <span className="period-meta">Great Britain · all times UK</span>
           </div>
         </section>
 
         {loading && !metrics ? (
-          <section className="message-panel" aria-live="polite">
-            <span className="spinner" aria-hidden="true" />
+          <section className="loading-panel" aria-live="polite" role="status">
             <p>Loading January wind data from Elexon…</p>
+            <div className="loading-skeleton" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
           </section>
         ) : error && !metrics ? (
           <section className="message-panel error-panel" role="alert">
@@ -248,34 +286,31 @@ function App() {
               </div>
             )}
 
-            <section className="metrics-grid" aria-label="Forecast accuracy metrics">
-              <MetricCard
+            <section className="metrics-strip" aria-label="Forecast accuracy metrics">
+              <MetricReadout
                 label="Mean absolute error"
                 value={formatMetric(metrics?.mae)}
                 unit="MW"
-                detail="Average distance from the realised output"
-                accent="green"
+                detail="Per matched timestamp"
+                className="primary-metric"
               />
-              <MetricCard
-                label="Mean absolute % error"
+              <MetricReadout
+                label="Mean absolute percentage error"
                 value={formatMetric(metrics?.mape)}
                 unit="%"
-                detail={`Across ${formatNumber(metadata?.mape_sample_count)} non-zero intervals`}
-                accent="blue"
+                detail={`${formatNumber(metadata?.mape_sample_count)} non-zero actuals`}
               />
-              <MetricCard
+              <MetricReadout
                 label="Forecast bias"
                 value={formatMetric(metrics?.bias)}
                 unit="MW"
-                detail="Forecast minus actual · positive means long"
-                accent="amber"
+                detail="Forecast − actual · positive is over-forecast"
               />
-              <MetricCard
+              <MetricReadout
                 label="Matched coverage"
                 value={coverage}
                 unit=""
-                detail={`${formatMetric(metadata?.coverage_pct)}% exact timestamp matches`}
-                accent="violet"
+                detail={`${formatMetric(metadata?.coverage_pct)}% exact matches`}
               />
             </section>
 
@@ -283,13 +318,10 @@ function App() {
               <article className="panel chart-panel">
                 <div className="panel-heading">
                   <div>
-                    <p className="section-kicker">THE MONTH, IN MEGAWATTS</p>
                     <h2>Forecast vs. outturn</h2>
-                    <p className="panel-description">
-                      Elexon national wind · each eligible delivery interval
-                    </p>
+                    <p className="panel-description">National wind generation · MW</p>
                   </div>
-                  <span className="unit-tag">JAN ’26</span>
+                  <span className="unit-tag">JAN 2026</span>
                 </div>
 
                 {chartData.length === 0 ? (
@@ -302,7 +334,7 @@ function App() {
                         margin={{ top: 14, right: 12, bottom: 4, left: 0 }}
                       >
                         <CartesianGrid
-                          stroke="#e8eeea"
+                          stroke="#e2ecef"
                           strokeDasharray="2 6"
                           vertical={false}
                         />
@@ -313,14 +345,14 @@ function App() {
                           tickFormatter={(value) =>
                             formatUKTime(value, { day: '2-digit', month: 'short' })
                           }
-                          tick={{ fill: '#75827c', fontSize: 10 }}
+                          tick={{ fill: '#49616d', fontSize: 11 }}
                           tickLine={false}
-                          axisLine={{ stroke: '#dce5df' }}
+                          axisLine={{ stroke: '#cbdde3' }}
                         />
                         <YAxis
                           width={58}
                           tickFormatter={formatNumber}
-                          tick={{ fill: '#75827c', fontSize: 10 }}
+                          tick={{ fill: '#49616d', fontSize: 11 }}
                           tickLine={false}
                           axisLine={false}
                         />
@@ -332,7 +364,7 @@ function App() {
                           iconSize={7}
                           wrapperStyle={{
                             fontSize: '12px',
-                            color: '#596970',
+                            color: '#49616d',
                             paddingBottom: '18px',
                           }}
                         />
@@ -340,20 +372,22 @@ function App() {
                           type="monotone"
                           dataKey="actual_generation"
                           name="Actual"
-                          stroke="#1b7a59"
+                          stroke="#087c67"
                           strokeWidth={2.5}
+                          isAnimationActive={false}
                           dot={false}
-                          activeDot={{ r: 4, fill: '#1b7a59', stroke: '#fff', strokeWidth: 2 }}
+                          activeDot={{ r: 4, fill: '#087c67', stroke: '#ffffff', strokeWidth: 2 }}
                         />
                         <Line
                           type="monotone"
                           dataKey="forecast_generation"
                           name="Day-ahead forecast"
-                          stroke="#7383ae"
+                          stroke="#a96300"
                           strokeWidth={2.25}
                           strokeDasharray="4 5"
+                          isAnimationActive={false}
                           dot={false}
-                          activeDot={{ r: 4, fill: '#7383ae', stroke: '#fff', strokeWidth: 2 }}
+                          activeDot={{ r: 4, fill: '#a96300', stroke: '#ffffff', strokeWidth: 2 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -385,15 +419,12 @@ function App() {
               <article className="panel watchlist-panel">
                 <div className="panel-heading">
                   <div>
-                    <p className="section-kicker">VOLUME RISK SIGNAL</p>
                     <h2>Where wind fell short</h2>
                     <p className="panel-description">
-                      Biggest positive outturn-minus-forecast gaps
+                      Largest outturn-above-forecast intervals
                     </p>
                   </div>
-                  <span className="watchlist-icon" aria-hidden="true">
-                    !
-                  </span>
+                  <span className="risk-tag">SHORTFALLS</span>
                 </div>
 
                 {underForecastPeriods.length === 0 ? (
@@ -452,17 +483,13 @@ function App() {
             </section>
 
             <section className="method-strip">
-              <div className="method-icon" aria-hidden="true">
-                i
-              </div>
               <div>
-                <strong>Decision-time method</strong>
+                <h2>How to read this analysis</h2>
                 <p>
-                  For each delivery interval, we select the latest WINDFOR issue
-                  published before the assumed <b>11:00 UK D-1 cutoff</b>.
-                  Elexon forecasts are hourly while FUELHH actuals are
-                  half-hourly, so this pilot scores exact timestamp overlaps
-                  only—no interpolation. MAPE excludes zero-actual periods.
+                  We use the latest WINDFOR issue by the assumed{' '}
+                  <b>11:00 UK D-1 cutoff</b>. Forecasts are hourly; FUELHH
+                  actuals are half-hourly. Only exact timestamp overlaps are
+                  scored—no interpolation. MAPE omits zero-actual periods.
                 </p>
               </div>
               <a
@@ -470,7 +497,7 @@ function App() {
                 target="_blank"
                 rel="noreferrer"
               >
-                Elexon dataset docs <span aria-hidden="true">↗</span>
+                Elexon dataset documentation <ExternalLinkIcon />
               </a>
             </section>
           </>

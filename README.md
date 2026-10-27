@@ -34,7 +34,7 @@ The selection rule is explicit: for each delivery `startTime`, select the latest
 │   ├── index.html          # App shell and browser metadata
 │   ├── nginx.conf          # SPA routing and API reverse proxy
 │   ├── vercel.json         # Vercel static build settings
-│   ├── package.json        # React, Vite, Recharts and scripts
+│   ├── package.json        # React, Vite, Recharts and self-hosted IBM Plex Sans
 │   ├── package-lock.json   # Reproducible frontend dependency versions
 │   ├── vite.config.js      # React plugin and local /api proxy
 │   ├── tailwind.config.js  # Tailwind content paths and theme
@@ -97,7 +97,7 @@ VITE_API_URL=https://your-backend.example/api/wind-analysis npm run build
 /api/wind-analysis?start_date=2026-01-01&end_date=2026-01-31
 ```
 
-The default dates are `2026-01-01` through `2026-01-31`. The response contains `metrics`, `metadata` (including selected forecast coverage and the latest included publication time), and `chart_data` (including each selected forecast publication time).
+The default dates are `2026-01-01` through `2026-01-31`. The response contains `metrics` (`mae`, `mape`, forecast `bias`, and `matched_coverage` with matched and expected period counts), `metadata` (including selected forecast coverage and the latest included publication time), `chart_data` (including each selected forecast publication time), and `shortfalls` (the five largest positive actual-minus-forecast gaps, with delivery and forecast publication times). Expected coverage is 48 half-hour periods per requested calendar day, or 1,488 for January 2026.
 
 ## Verification
 
@@ -142,4 +142,4 @@ The requested unlisted YouTube recording still needs to be recorded and uploaded
 
 ## AI tools
 
-An AI assistant using Copilot SDK in VS Code assisted with implementation and documentation. The data-selection logic and its tests were reviewed and run as part of development.
+An AI assistant using Copilot SDK in VS Code assisted with implementation and documentation. Impeccable design guidance and its UI detector informed the dashboard redesign; IBM Plex Sans is self-hosted through Fontsource rather than fetched at runtime. The data-selection logic and its tests were reviewed and run as part of development.
