@@ -1,9 +1,95 @@
 import unittest
 from datetime import date, datetime, timezone
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, patch
 
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
+from google.genai.errors import APIError
 
-from main import analyse_wind, fetch_records
+from main import (
+    ASSISTANT_SYSTEM_PROMPT,
+    GEMINI_MODEL,
+    analyse_wind,
+    app,
+    fetch_records,
+)
+
+
+class AskAssistantTests(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app)
+        self.payload = {
+            "question": "What is the forecast bias?",
+            "context": {
+                "metrics": {"bias": 125.0},
+                "shortfalls": [],
+                "chart_data_summary": {"matched_periods": 744},
+            },
+        }
+
+    def test_missing_api_key_returns_service_unavailable(self):
+        with patch.dict("os.environ", {}, clear=True):
+            response = self.client.post("/api/ask-assistant", json=self.payload)
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("GEMINI_API_KEY", response.json()["detail"])
+
+    def test_question_and_dashboard_context_are_sent_to_gemini(self):
+        generate_content = AsyncMock(return_value=SimpleNamespace(text="Bias is 125 MW."))
+        close = AsyncMock()
+        fake_client = SimpleNamespace(
+            aio=SimpleNamespace(
+                models=SimpleNamespace(generate_content=generate_content),
+                aclose=close,
+            )
+        )
+        with (
+            patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}),
+            patch("main.genai.Client", return_value=fake_client),
+        ):
+            response = self.client.post("/api/ask-assistant", json=self.payload)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"answer": "Bias is 125 MW."})
+        kwargs = generate_content.await_args.kwargs
+        self.assertEqual(kwargs["model"], GEMINI_MODEL)
+        self.assertIn(self.payload["question"], kwargs["contents"])
+        self.assertIn('"bias":125.0', kwargs["contents"])
+        self.assertEqual(
+            kwargs["config"].system_instruction,
+            ASSISTANT_SYSTEM_PROMPT,
+        )
+        close.assert_awaited_once()
+
+    def test_gemini_api_error_returns_bad_gateway(self):
+        generate_content = AsyncMock(
+            side_effect=APIError(500, {"message": "provider failure"})
+        )
+        close = AsyncMock()
+        fake_client = SimpleNamespace(
+            aio=SimpleNamespace(
+                models=SimpleNamespace(generate_content=generate_content),
+                aclose=close,
+            )
+        )
+        with (
+            patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}),
+            patch("main.genai.Client", return_value=fake_client),
+        ):
+            response = self.client.post("/api/ask-assistant", json=self.payload)
+
+        self.assertEqual(response.status_code, 502)
+        self.assertIn("request failed", response.json()["detail"])
+        close.assert_awaited_once()
+
+    def test_invalid_request_payload_is_rejected(self):
+        response = self.client.post(
+            "/api/ask-assistant",
+            json={"question": "", "context": self.payload["context"]},
+        )
+
+        self.assertEqual(response.status_code, 422)
 
 
 class WindAnalysisTests(unittest.TestCase):

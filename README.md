@@ -16,6 +16,8 @@ The app is an analysis aid, not a dispatch or trading recommendation. It uses on
 
 The selection rule is explicit: for each delivery `startTime`, select the latest forecast `publishTime` at or before **11:00 Europe/London on the previous calendar day**. This cutoff is an assumption for the pilot and should be confirmed with the client's actual market/desk decision deadline before operational use. The backend uses UK calendar days and timezone rules, including daylight-saving changes. It does not interpolate, fill, or aggregate mismatched intervals; coverage shows the impact of missing overlaps.
 
+The optional `POST /api/ask-assistant` endpoint uses Google Gemini (`gemini-2.5-flash`) to answer questions from a request-supplied snapshot of dashboard metrics, shortfalls, and a chart-data summary. Set `GEMINI_API_KEY` in the environment to enable it. Docker Compose passes this variable through to the backend; without it, the endpoint responds with HTTP 503. The assistant does not fetch additional market data.
+
 ## Repository map
 
 ```text
@@ -58,6 +60,7 @@ The selection rule is explicit: for each delivery `startTime`, select the latest
 From the repository root:
 
 ```bash
+export GEMINI_API_KEY=your-google-ai-studio-api-key
 docker compose up --build
 ```
 
@@ -98,6 +101,33 @@ VITE_API_URL=https://your-backend.example/api/wind-analysis npm run build
 ```
 
 The default dates are `2026-01-01` through `2026-01-31`. The response contains `metrics` (`mae`, `mape`, forecast `bias`, and `matched_coverage` with matched and expected period counts), `metadata` (including selected forecast coverage and the latest included publication time), `chart_data` (including each selected forecast publication time), and `shortfalls` (the five largest positive actual-minus-forecast gaps, with delivery and forecast publication times). Expected coverage is 48 half-hour periods per requested calendar day, or 1,488 for January 2026.
+
+### Dashboard assistant
+
+`POST /api/ask-assistant` accepts a question and the current dashboard context. The caller supplies `metrics`, `shortfalls`, and an aggregated `chart_data_summary`; the backend sends only that context and the question to Gemini.
+
+```json
+{
+  "question": "What does the forecast bias indicate?",
+  "context": {
+    "metrics": {
+      "bias": 125.0,
+      "matched_coverage": {
+        "matched": 744,
+        "expected": 1488
+      }
+    },
+    "shortfalls": [],
+    "chart_data_summary": {
+      "matched_periods": 744,
+      "mean_actual_generation_mw": 8200,
+      "mean_forecast_generation_mw": 8325
+    }
+  }
+}
+```
+
+The success response is `{"answer":"..."}`. A missing `GEMINI_API_KEY` returns HTTP 503; Gemini or network request failures return HTTP 502. Questions are limited to 2,000 characters and serialized context to 50,000 characters.
 
 ## Verification
 
